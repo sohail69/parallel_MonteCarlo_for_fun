@@ -13,7 +13,8 @@ Vec2D<REAL> closestPoint( Vec2D<REAL> x, Vec2D<REAL> a, Vec2D<REAL> b ) {
 };
 
 // returns true if the point b on the polyline abc is a silhoutte relative to x
-bool isSilhouette( Vec2D x, Vec2D a, Vec2D b, Vec2D c ) {
+template<typename REAL>
+bool isSilhouette(Vec2D<REAL> x, Vec2D<REAL> a, Vec2D<REAL> b, Vec2D<REAL> c ) {
    return ( cross(b-a,x-a) * cross(c-b,x-b) ) < 0;
 };
 
@@ -29,14 +30,14 @@ REAL rayIntersection( Vec2D<REAL> x, Vec2D<REAL> v, Vec2D<REAL> a, Vec2D<REAL> b
    if (t > 0. && 0. <= s && s <= 1.) {
       return t;
    }
-   return infinity;
+   return std::numeric_limits<REAL>::infinity();
 }
 
 // Returns distance from x to closest
 // point on the given polylines P
 template<typename REAL, typename UINT>
-REAL distancePolylines( Vec2D<REAL> x, const vector<Polyline2D>& P ) {
-   REAL d = infinity; // minimum distance so far
+REAL distancePolylines( Vec2D<REAL> x, const std::vector<Polyline2D<REAL>>& P ) {
+   REAL d = std::numeric_limits<REAL>::infinity(); // minimum distance so far
    for( UINT i = 0; i < P.size(); i++ ) { // iterate over polylines
       for( UINT j = 0; j < P[i].size()-1; j++ ) { // iterate over segments
          Vec2D<REAL> y = closestPoint( x, P[i][j], P[i][j+1] ); // distance to segment
@@ -52,7 +53,7 @@ REAL distancePolylines( Vec2D<REAL> x, const vector<Polyline2D>& P ) {
 // closest line
 template<typename REAL, typename UINT>
 Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL r,
-                         const vector<Polyline2D>& P,
+                         const std::vector<Polyline2D<REAL>>& P,
                          Vec2D<REAL> & n, bool & onBoundary ){
    REAL tMin = r; // smallest hit time so far
    n = Vec2D<REAL>({ 0.0, 0.0 }); // first hit normal
@@ -75,22 +76,28 @@ Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL r,
 // these routines are not used by WoSt itself, but are rather used to check
 // whether a given evaluation point is actually inside the domain
 template<typename REAL, typename UINT>
-REAL signedAngle(Vec2D<REAL> x, const std::vector<Polyline<REAL>>& P )
+REAL signedAngle(Vec2D<REAL> x, const std::vector<Polyline2D<REAL>>& P )
 {
-   REAL Theta = 0.;
-   for(UINT i = 0; i < P.size(); i++ )
-      for(UINT j = 0; j < P[i].size()-1; j++ )
-         Theta += arg( (P[i][j+1]-x)/(P[i][j]-x) );
-   return Theta;
+  REAL Theta = 0.;
+  for(UINT i = 0; i < P.size(); i++ ){
+    for(UINT j = 0; j < P[i].size()-1; j++ ){
+      Vec2D<REAL> y1 = P[i][j+1]-x;
+      Vec2D<REAL> y2 = P[i][j]-x;
+      REAL y2_norm = y2[0]*y2[0] + y2[1]*y2[1];
+      Vec2D<REAL> y_normed = {(y1[0]*y2[0] + y1[1]*y2[1])/y2_norm, (y1[1]*y2[0] - y1[0]*y2[1])/y2_norm};
+      Theta += angleOf2DVec<REAL>(y_normed);
+    }
+  }
+  return Theta;
 }
 
 // Returns true if the point x is contained in the region bounded by the Dirichlet
 // and Neumann curves.  We assume these curves form a collection of closed polygons,
 // and are given in a consistent counter-clockwise winding order.
 template<typename REAL, typename UINT>
-bool insideDomain(Vec2D x
-                , const vector<Polyline<REAL>>& boundaryDirichlet
-                , const vector<Polyline<REAL>>& boundaryNeumann )
+bool insideDomain(Vec2D<REAL> x
+                , const std::vector<Polyline2D<REAL>>& boundaryDirichlet
+                , const std::vector<Polyline2D<REAL>>& boundaryNeumann )
 {
    REAL Theta = signedAngle<REAL,UINT>( x, boundaryDirichlet ) + signedAngle<REAL,UINT>(x, boundaryNeumann);
    const REAL delta = 1e-4; // numerical tolerance

@@ -4,7 +4,6 @@
 // Conditions" (2023), assuming no source term and zero-Neumann conditions.
 // NOTE: this code makes a few shortcuts for the sake of code brevity; may
 // be more suitable for tutorials than for production code/evaluation.
-// To compile: c++ -std=c++17 -O3 -pedantic -Wall WoStLaplace2D.cpp -o wost
 #include <algorithm>
 #include <array>
 #include <complex>
@@ -20,7 +19,7 @@
 #include "include/partitioner.hpp"
 #include "include/blockHyperMesh.hpp"
 #include "include/localVectorAlgebra.hpp"
-
+#include "include/IntersectionDetection2D.hpp"
 
 //Simple block mesh data
 //for uniform quad
@@ -113,7 +112,7 @@ int main(){
       I = Iter1D + MPI_ITstart;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
-//      InDomainFlag[I] = (insideDomain(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
+      InDomainFlag[I] = (insideDomain<double,int>(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
     }
 
     for(Iter1D=dev_ITstart; Iter1D<dev_ITend; Iter1D++){
