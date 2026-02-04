@@ -20,7 +20,7 @@
 #include "include/partitioner.hpp"
 #include "include/blockHyperMesh.hpp"
 #include "include/localVectorAlgebra.hpp"
-using namespace std;
+
 
 //Simple block mesh data
 //for uniform quad
@@ -35,6 +35,32 @@ void simpleBlockMeshBuild(const REAL & dx, const UINT & size, blockHyperMeshData
   }
 }
 
+//Simple imbedded boundary
+//description data
+template<typename REAL>
+void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirichlet
+                    , std::vector<Polyline2D<REAL>> & bcNeumann)
+{
+  // for simplicity, in this code we assume that the Dirichlet and Neumann
+  // boundary polylines form a collection of closed polygons (possibly with holes),
+  // and are given with consistent counter-clockwise orientation
+  bcDirichlet.clear();
+  bcNeumann.clear();
+  bcDirichlet.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 0.2})
+                                         ,Vec2D<REAL>({0.6, 0.0})
+                                         ,Vec2D<REAL>({1.0, 0.2})  }));
+  bcDirichlet.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 1.0})
+                                         ,Vec2D<REAL>({0.6, 0.8})
+                                         ,Vec2D<REAL>({0.2, 1.0})  }));
+
+  bcNeumann.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 0.2})
+                                      , Vec2D<REAL>({0.8, 0.6})
+                                      , Vec2D<REAL>({1.0, 1.0})  }));
+  bcNeumann.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 1.0})
+                                      , Vec2D<REAL>({0.0, 0.6})
+                                      , Vec2D<REAL>({0.2, 0.2})} ));
+};
+
 
 int main(){
   //The MPI communicator
@@ -47,9 +73,12 @@ int main(){
   const double dx= 1.0/double(s); //Image increment
 
   //Generate the blockMesh from
-  //the base size (2D-Quad) 
+  //the base size (2D-Quad) and
+  //a 2D polyline boundary
   blockHyperMeshData<double,int,2> BHMeshData;
+  std::vector<Polyline2D<double>> boundaryDirichlet, boundaryNeumann;
   simpleBlockMeshBuild<double,int,2>(dx, s, BHMeshData);
+  simple2DBoundary<double>(boundaryDirichlet,  boundaryNeumann);
 
   //Partitioning the data on multiple
   //levels
@@ -95,6 +124,7 @@ int main(){
     }
   }
 
+
   // Printing some extra data to
   // console (to check for if
   // program launched correctly)
@@ -105,6 +135,7 @@ int main(){
             << std::setw(10) << MPI_ITstart
             << std::setw(10) << MPI_ITend   << std::endl;
 
+
   // Output the data into
   // a file (the original
   // used CSV's, IO tbd)
@@ -112,28 +143,3 @@ int main(){
 
   return 0;
 }
-
-/*
-int main( int argc, char** argv ) {
-   srand( time(NULL) );
-   ofstream out( "out.csv" );
-
-   int s = 128; // image size
-   for( int j = 0; j < s; j++ )
-   {
-      cerr << "row " << j << " of " << s << endl;
-      for( int i = 0; i < s; i++ )
-      {
-         Vec2D x0( ((double)i+.5)/((double)s),
-                   ((double)j+.5)/((double)s) );
-         double u = 0.;
-         if( insideDomain(x0, boundaryDirichlet, boundaryNeumann) )
-            u = solve( x0, boundaryDirichlet, boundaryNeumann, lines );
-         out << u;
-         if( i < s-1 ) out << ",";
-      }
-      out << endl;
-   }
-   return 0;
-}*/
-

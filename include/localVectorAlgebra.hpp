@@ -22,7 +22,6 @@ using TriSoup3D = std::vector<std::array<Vec3D<REAL>,3>>;
 template<typename REAL>
 using PointSoup3D = std::vector<Vec3D<REAL>>;
 
-
 // Operators acting on Vectors
 template<typename REAL>
 Vec2D<REAL> operator+(const Vec2D<REAL> & u, const Vec2D<REAL> & v){

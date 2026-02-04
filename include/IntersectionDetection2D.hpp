@@ -1,7 +1,8 @@
 #pragma once
-#include <vector>
 #include <array>
+#include <vector>
 #include "localVectorAlgebra.hpp"
+#include "templatedMaths/tCmath.hpp"
 
 // returns the closest point to x on a segment with endpoints a and b
 template<typename REAL>
@@ -34,7 +35,7 @@ REAL rayIntersection( Vec2D<REAL> x, Vec2D<REAL> v, Vec2D<REAL> a, Vec2D<REAL> b
 // Returns distance from x to closest
 // point on the given polylines P
 template<typename REAL, typename UINT>
-REAL distancePolylines( Vec2D<REAL> x, const vector<Polyline>& P ) {
+REAL distancePolylines( Vec2D<REAL> x, const vector<Polyline2D>& P ) {
    REAL d = infinity; // minimum distance so far
    for( UINT i = 0; i < P.size(); i++ ) { // iterate over polylines
       for( UINT j = 0; j < P[i].size()-1; j++ ) { // iterate over segments
@@ -51,7 +52,7 @@ REAL distancePolylines( Vec2D<REAL> x, const vector<Polyline>& P ) {
 // closest line
 template<typename REAL, typename UINT>
 Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL r,
-                         const vector<Polyline>& P,
+                         const vector<Polyline2D>& P,
                          Vec2D<REAL> & n, bool & onBoundary ){
    REAL tMin = r; // smallest hit time so far
    n = Vec2D<REAL>({ 0.0, 0.0 }); // first hit normal
@@ -69,4 +70,29 @@ Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL r,
       }
    }
    return x + tMin*v; // first hit location
+}
+
+// these routines are not used by WoSt itself, but are rather used to check
+// whether a given evaluation point is actually inside the domain
+template<typename REAL, typename UINT>
+REAL signedAngle(Vec2D<REAL> x, const std::vector<Polyline<REAL>>& P )
+{
+   REAL Theta = 0.;
+   for(UINT i = 0; i < P.size(); i++ )
+      for(UINT j = 0; j < P[i].size()-1; j++ )
+         Theta += arg( (P[i][j+1]-x)/(P[i][j]-x) );
+   return Theta;
+}
+
+// Returns true if the point x is contained in the region bounded by the Dirichlet
+// and Neumann curves.  We assume these curves form a collection of closed polygons,
+// and are given in a consistent counter-clockwise winding order.
+template<typename REAL, typename UINT>
+bool insideDomain(Vec2D x
+                , const vector<Polyline<REAL>>& boundaryDirichlet
+                , const vector<Polyline<REAL>>& boundaryNeumann )
+{
+   REAL Theta = signedAngle<REAL,UINT>( x, boundaryDirichlet ) + signedAngle<REAL,UINT>(x, boundaryNeumann);
+   const REAL delta = 1e-4; // numerical tolerance
+   return abs<REAL>(Theta-2.*M_PI) < delta; // boundary winds around x exactly once
 }
