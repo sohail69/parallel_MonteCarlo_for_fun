@@ -80,6 +80,8 @@ int main(){
       BHMeshPoint<double,int,2>(x0.data(), Iter1D, BHMeshData);
       InDomainFlag[I] = (insideDomain(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
     }
+
+    #pragma omp barrier
   }
 
   //Printing some extra
