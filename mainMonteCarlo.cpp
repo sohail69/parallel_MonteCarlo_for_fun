@@ -14,6 +14,7 @@
 #include <random>
 #include <vector>
 #include <fstream>
+#include <cstdio>
 
 #include "include/MPIcomm.hpp"
 #include "include/partitioner.hpp"
@@ -41,9 +42,9 @@ int main(){
   MPIComm mpiComm(IS_MPI_ON);
 
   //Problem base size
-  const int s = 128;       //Image length-width
-  const int nSize = s*s;   //Total image size
-  const double dx=0.01;
+  const int s = 10;//128;              //Image length-width
+  const int nSize = s*s;          //Total image size
+  const double dx= 1.0/double(s); //Image increment
 
   //Generate the blockMesh from
   //the base size (2D-Quad) 
@@ -68,39 +69,47 @@ int main(){
   //device core local partitioning
   //all of the code from here should
   //be run on the device
-  int dev_id=1, ndev_cores=10, Iter1D=0, I=0;
-  #pragma omp target default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, Iter1D, I)
+  int dev_id=0, ndev_cores=1, Iter1D=0, I=0;
+
+  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, Iter1D, I)
+  #pragma omp target
   {
     dev_ITstart = firstIterator<int>(dev_id, ndev_cores, nSize);
     dev_ITend   = lastIterator<int>( dev_id, ndev_cores, nSize);
     dev_lSize   = dev_ITend - dev_ITstart;
 
-    for(Iter1D=dev_ITstart; I<dev_ITend; I++){
+    printf("dev_ITstart :  %d   dev_ITend :  %d   dev_lSize :  %d \n", dev_ITstart, dev_ITend, dev_lSize);
+
+    for(Iter1D=dev_ITstart; Iter1D<dev_ITend; Iter1D++){
       I = Iter1D + MPI_ITstart;
       Vec2D<double> x0;
-      BHMeshPoint<double,int,2>(x0.data(), Iter1D, BHMeshData);
-      InDomainFlag[I] = (insideDomain(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
+      BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
+//      InDomainFlag[I] = (insideDomain(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
     }
 
-    for(Iter1D=dev_ITstart; I<dev_ITend; I++){
+    for(Iter1D=dev_ITstart; Iter1D<dev_ITend; Iter1D++){
       I = Iter1D + MPI_ITstart;
       Vec2D<double> x0;
-      BHMeshPoint<double,int,2>(x0.data(), GOffset+Iter1D, BHMeshData);
-      u_sol[I] = (InDomainFlag[I]==1) solve( x0, boundaryDirichlet, boundaryNeumann, lines );
+      BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
+//      u_sol[I] = (InDomainFlag[I]==1)? solve(x0, boundaryDirichlet, boundaryNeumann, lines) : double(0.00);
     }
-
-    #pragma omp barrier
   }
 
-  // Printing some extra data
-  // for (to check for if it
-  // launched correctly)
+  // Printing some extra data to
+  // console (to check for if
+  // program launched correctly)
   if(mpiComm.getProcID() == 0) std::cout << "Iterators" << std::endl;
   std::cout << std::setw(10) << mpiComm.getProcID()
             << std::setw(10) << mpiComm.getNProcs() 
             << std::setw(10) << MPI_lSize
             << std::setw(10) << MPI_ITstart
             << std::setw(10) << MPI_ITend   << std::endl;
+
+  // Output the data into
+  // a file (the original
+  // used CSV's, IO tbd)
+
+
   return 0;
 }
 
