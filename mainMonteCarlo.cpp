@@ -20,6 +20,7 @@
 #include "include/blockHyperMesh.hpp"
 #include "include/localVectorAlgebra.hpp"
 #include "include/IntersectionDetection2D.hpp"
+#include "problemOperators/poissonGreenFunctionOperator2D.hpp"
 
 //Simple block mesh data
 //for uniform quad
@@ -37,25 +38,25 @@ void simpleBlockMeshBuild(const REAL & dx, const UINT & size, blockHyperMeshData
 //Simple imbedded boundary
 //description data
 template<typename REAL>
-void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirichlet
-                    , std::vector<Polyline2D<REAL>> & bcNeumann)
+void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirch
+                    , std::vector<Polyline2D<REAL>> & bcNeum)
 {
   // for simplicity, in this code we assume that the Dirichlet and Neumann
   // boundary polylines form a collection of closed polygons (possibly with holes),
   // and are given with consistent counter-clockwise orientation
-  bcDirichlet.clear();
-  bcNeumann.clear();
-  bcDirichlet.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 0.2})
+  bcDirch.clear();
+  bcNeum.clear();
+  bcDirch.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 0.2})
                                          ,Vec2D<REAL>({0.6, 0.0})
                                          ,Vec2D<REAL>({1.0, 0.2})  }));
-  bcDirichlet.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 1.0})
+  bcDirch.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 1.0})
                                          ,Vec2D<REAL>({0.6, 0.8})
                                          ,Vec2D<REAL>({0.2, 1.0})  }));
 
-  bcNeumann.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 0.2})
+  bcNeum.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 0.2})
                                       , Vec2D<REAL>({0.8, 0.6})
                                       , Vec2D<REAL>({1.0, 1.0})  }));
-  bcNeumann.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 1.0})
+  bcNeum.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 1.0})
                                       , Vec2D<REAL>({0.0, 0.6})
                                       , Vec2D<REAL>({0.2, 0.2})} ));
 };
@@ -75,9 +76,9 @@ int main(){
   //the base size (2D-Quad) and
   //a 2D polyline boundary
   blockHyperMeshData<double,int,2> BHMeshData;
-  std::vector<Polyline2D<double>> boundaryDirichlet, boundaryNeumann;
+  std::vector<Polyline2D<double>> bcDirch, bcNeum;
   simpleBlockMeshBuild<double,int,2>(dx, s, BHMeshData);
-  simple2DBoundary<double>(boundaryDirichlet,  boundaryNeumann);
+  simple2DBoundary<double>(bcDirch,  bcNeum);
 
   //Partitioning the data on multiple
   //levels
@@ -91,35 +92,38 @@ int main(){
 
   //Generate a vector for storing
   //the local solution data
-  std::vector<int> InDomainFlag(MPI_lSize);
-  std::vector<double> u_sol(MPI_lSize);
+  std::vector<int> InDomainFlag; InDomainFlag.resize(MPI_lSize);
+  std::vector<double> u_sol;     u_sol.resize(MPI_lSize);
 
   //device core local partitioning
   //all of the code from here should
   //be run on the device
-  int dev_id=0, ndev_cores=1, Iter1D=0, I=0;
+  int dev_id=0, ndev_cores=1, It1D=0, I=0;
+  double zero(0.00);
 
-  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, Iter1D, I)
-  #pragma omp target
+//  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, It1D, I)
+ // #pragma omp target
   {
-    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, nSize);
-    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, nSize);
+    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, MPI_lSize);
+    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, MPI_lSize);
     dev_lSize   = dev_ITend - dev_ITstart;
 
     printf("dev_ITstart :  %d   dev_ITend :  %d   dev_lSize :  %d \n", dev_ITstart, dev_ITend, dev_lSize);
 
-    for(Iter1D=dev_ITstart; Iter1D<dev_ITend; Iter1D++){
-      I = Iter1D + MPI_ITstart;
+    int ValMax=0, ValMin=0;
+    for(It1D=dev_ITstart; It1D <= dev_ITend; It1D++){
+      I = It1D + MPI_ITstart;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
-      InDomainFlag[I] = (insideDomain<double,int>(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
+      InDomainFlag[It1D] = (insideDomain<double,int>(x0, bcDirch, bcNeum) ? 1:0);
     }
 
-    for(Iter1D=dev_ITstart; Iter1D<dev_ITend; Iter1D++){
-      I = Iter1D + MPI_ITstart;
+    for(It1D=dev_ITstart; It1D<=dev_ITend; It1D++){
+      I = It1D + MPI_ITstart;
+      int rnd_seed = I;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
-//      u_sol[I] = (InDomainFlag[I]==1)? solve(x0, boundaryDirichlet, boundaryNeumann, lines) : double(0.00);
+      u_sol[It1D]=(InDomainFlag[It1D]==1)?solve<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed):zero;
     }
   }
 
@@ -140,5 +144,9 @@ int main(){
   // used CSV's, IO tbd)
 
 
+  //clean-up
+  InDomainFlag.clear();
+  u_sol.clear();
+  MPI_Finalize();
   return 0;
 }

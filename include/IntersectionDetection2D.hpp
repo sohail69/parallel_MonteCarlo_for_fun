@@ -8,7 +8,7 @@
 template<typename REAL>
 Vec2D<REAL> closestPoint( Vec2D<REAL> x, Vec2D<REAL> a, Vec2D<REAL> b ) {
    Vec2D<REAL> u = b-a;
-   REAL t = clamp( dot(x-a,u)/dot(u,u), 0.0, 1.0 );
+   REAL t = std::clamp( dot(x-a,u)/dot(u,u), 0.0, 1.0 );
    return (1.0-t)*a + t*b;
 };
 
@@ -41,12 +41,11 @@ REAL distancePolylines( Vec2D<REAL> x, const std::vector<Polyline2D<REAL>>& P ) 
    for( UINT i = 0; i < P.size(); i++ ) { // iterate over polylines
       for( UINT j = 0; j < P[i].size()-1; j++ ) { // iterate over segments
          Vec2D<REAL> y = closestPoint( x, P[i][j], P[i][j+1] ); // distance to segment
-         d = min( d, length(x-y) ); // update minimum distance
+         d = std::min( d, length(x-y) ); // update minimum distance
       }
    }
    return d;
 };
-
 
 // Checks for the intersection
 // of the the point on the
@@ -61,16 +60,30 @@ Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL r,
    for( UINT i = 0; i < P.size(); i++ ) { // iterate over polylines
       for( UINT j = 0; j < P[i].size()-1; j++ ) { // iterate over segments
          const REAL c = 1e-5; // ray offset (to avoid self-intersection)
-         REAL t = rayIntersection( x + c*v, v, P[i][j], P[i][j+1] );
+         REAL t = rayIntersection<REAL>(x + c*v, v, P[i][j], P[i][j+1] );
          if( t < tMin ) { // closest hit so far
             tMin = t;
-            n = rotate90( P[i][j+1] - P[i][j] ); // get normal
+            rotate90<REAL>(P[i][j+1] - P[i][j], n); // get normal
             n /= length(n); // make normal unit length
             onBoundary = true;
          }
       }
    }
    return x + tMin*v; // first hit location
+}
+
+// returns distance from x to closest silhouette point on the given polylines P
+template<typename REAL, typename UINT>
+REAL silhouetteDistancePolylines(Vec2D<REAL> x, const std::vector<Polyline2D<REAL>> &P ){
+   REAL d = std::numeric_limits<REAL>::infinity(); // minimum distance so far
+   for( UINT i = 0; i < P.size(); i++ ) { // iterate over polylines
+      for( UINT j = 1; j < P[i].size()-1; j++ ) { // iterate over segment pairs
+         if( isSilhouette( x, P[i][j-1], P[i][j], P[i][j+1] )) {
+            d = std::min( d, length(x-P[i][j]) ); // update minimum distance
+         }
+      }
+   }
+   return d;
 }
 
 // these routines are not used by WoSt itself, but are rather used to check
