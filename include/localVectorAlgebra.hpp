@@ -74,7 +74,6 @@ REAL dot(Vec3D<REAL> u, Vec3D<REAL> v) { return u[0]*v[0] + u[1]*v[1] + u[2]*v[2
 template<typename REAL>
 REAL cross(Vec2D<REAL> u, Vec2D<REAL> v) { return u[0]*v[1] - u[1]*v[0];}
 
-
 //Find the polar angle of
 // a 2D vector
 template<typename REAL>

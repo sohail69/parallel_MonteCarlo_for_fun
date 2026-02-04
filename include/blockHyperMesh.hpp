@@ -1,4 +1,5 @@
 #pragma once
+#include "localVectorAlgebra.hpp"
 
 //Miminimum data needed
 //to generate and oriented
