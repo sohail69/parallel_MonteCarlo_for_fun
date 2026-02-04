@@ -68,24 +68,33 @@ int main(){
   //device core local partitioning
   //all of the code from here should
   //be run on the device
-  #pragma omp target
+  int dev_id=1, ndev_cores=10, Iter1D=0, I=0;
+  #pragma omp target default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, Iter1D, I)
   {
-    int dev_id=1, ndev_cores=10, I=0;
     dev_ITstart = firstIterator<int>(dev_id, ndev_cores, nSize);
     dev_ITend   = lastIterator<int>( dev_id, ndev_cores, nSize);
     dev_lSize   = dev_ITend - dev_ITstart;
 
     for(Iter1D=dev_ITstart; I<dev_ITend; I++){
+      I = Iter1D + MPI_ITstart;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), Iter1D, BHMeshData);
       InDomainFlag[I] = (insideDomain(x0, boundaryDirichlet, boundaryNeumann) ? 1:0);
     }
 
+    for(Iter1D=dev_ITstart; I<dev_ITend; I++){
+      I = Iter1D + MPI_ITstart;
+      Vec2D<double> x0;
+      BHMeshPoint<double,int,2>(x0.data(), GOffset+Iter1D, BHMeshData);
+      u_sol[I] = (InDomainFlag[I]==1) solve( x0, boundaryDirichlet, boundaryNeumann, lines );
+    }
+
     #pragma omp barrier
   }
 
-  //Printing some extra
-  //data for fun
+  // Printing some extra data
+  // for (to check for if it
+  // launched correctly)
   if(mpiComm.getProcID() == 0) std::cout << "Iterators" << std::endl;
   std::cout << std::setw(10) << mpiComm.getProcID()
             << std::setw(10) << mpiComm.getNProcs() 
