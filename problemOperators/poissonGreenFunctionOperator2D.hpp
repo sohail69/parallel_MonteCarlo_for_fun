@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <vector>
 #include <functional>
+#include "../include/globalMacros.hpp"
 #include "../include/RNG.hpp"
 #include "../include/localVectorAlgebra.hpp"
 #include "../include/IntersectionDetection2D.hpp"
@@ -22,14 +23,14 @@
 !
 \**************************************/
 template<typename REAL>
-REAL lines( Vec2D<REAL> x ) {
+FORCE_INLINE REAL lines( Vec2D<REAL> x ) {
    const REAL s = 8.0;
    return std::fmod( std::floor(s*x[0]), 2.0 );
 }
 
 
 template<typename REAL, typename UINT>
-REAL solve(Vec2D<REAL> x0,                                  // evaluation point
+FORCE_INLINE REAL solve(Vec2D<REAL> x0,                                  // evaluation point
            std::vector<Polyline2D<REAL>> boundaryDirichlet, // absorbing part of the boundary
            std::vector<Polyline2D<REAL>> boundaryNeumann,   // reflecting part of the boundary
            std::function<REAL(Vec2D<REAL>)> g,              // Dirichlet boundary values
@@ -50,7 +51,8 @@ REAL solve(Vec2D<REAL> x0,                                  // evaluation point
 
       REAL r, dDirichlet, dSilhouette; // radii used to define star shaped region
       UINT steps = 0;
-      do { // loop until the walk hits the Dirichlet boundary
+      for(steps=0; (dDirichlet > eps) && (steps < maxSteps); steps++){
+         // loop until the walk hits the Dirichlet boundary
          // compute the radius of the largest star-shaped region
          dDirichlet = distancePolylines<REAL,UINT>( x, boundaryDirichlet );
          dSilhouette = silhouetteDistancePolylines<REAL,UINT>( x, boundaryNeumann );
@@ -68,7 +70,6 @@ REAL solve(Vec2D<REAL> x0,                                  // evaluation point
          x = intersectPolylines<REAL,UINT>( x, v, r, boundaryNeumann, n, onBoundary );
          steps++;
       }
-      while(dDirichlet > eps && steps < maxSteps);
       //stop if we hit the Dirichlet boundary, or the walk is too long
       if( steps >= maxSteps ) printf("Hit max steps \n");
       sum += g(x); // accumulate contribution of the boundary value

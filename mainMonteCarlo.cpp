@@ -49,10 +49,8 @@ void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirch
   bcNeum.clear();
   bcDirch.push_back({{ Vec2D<REAL>({0.2, 0.2}), Vec2D<REAL>({0.6, 0.0}), Vec2D<REAL>({1.0, 0.2}) }});
   bcDirch.push_back({{ Vec2D<REAL>({1.0, 1.0}), Vec2D<REAL>({0.6, 0.8}), Vec2D<REAL>({0.2, 1.0}) }});
-
-  bcNeum.push_back({{ Vec2D<REAL>({1.0, 0.2}), Vec2D<REAL>({0.8, 0.6}), Vec2D<REAL>({1.0, 1.0}) }});
-  bcNeum.push_back({{ Vec2D<REAL>({0.2, 1.0}), Vec2D<REAL>({0.0, 0.6}), Vec2D<REAL>({0.2, 0.2}) }});
-
+  bcNeum.push_back({{  Vec2D<REAL>({1.0, 0.2}), Vec2D<REAL>({0.8, 0.6}), Vec2D<REAL>({1.0, 1.0}) }});
+  bcNeum.push_back({{  Vec2D<REAL>({0.2, 1.0}), Vec2D<REAL>({0.0, 0.6}), Vec2D<REAL>({0.2, 0.2}) }});
 };
 
 
@@ -62,9 +60,10 @@ int main(){
   MPIComm mpiComm(IS_MPI_ON);
 
   //Problem base size
-  const int s = 128;//128;        //Image length-width
-  const int nSize = s*s;          //Total image size
-  const double dx= 1.0/double(s); //Image increment
+  const int nWalks = 65536;      // number of Monte Carlo samples
+  const int s = 128;             //Image length-width
+  const int nSize = s*s;         //Total image size
+  const double dx= 1.0/double(s);//Image increment
 
   //Generate the blockMesh from
   //the base size (2D-Quad) and
@@ -79,28 +78,45 @@ int main(){
   int MPI_lSize, MPI_ITstart, MPI_ITend;
   int dev_lSize, dev_ITstart, dev_ITend;
 
-  //MPI global partitioning
+  //MPI global partitioning (Geometric paritioning of the domain)
   MPI_ITstart = firstIterator<int>(mpiComm.getProcID(), mpiComm.getNProcs(), nSize);
   MPI_ITend   = lastIterator<int>( mpiComm.getProcID(), mpiComm.getNProcs(), nSize);
   MPI_lSize   = MPI_ITend - MPI_ITstart;
 
+  //device local partitioning
+  int dev_id=0, ndev_cores=1, It1D=0, I=0;
+
   //Generate a vector for storing
   //the local solution data
-  std::vector<int> InDomainFlag; InDomainFlag.resize(MPI_lSize);
-  std::vector<double> u_sol;     u_sol.resize(MPI_lSize);
+  std::vector<int> InDomainFlag;   InDomainFlag.resize(MPI_lSize);
+  std::vector<double> u_sol;       u_sol.resize(MPI_lSize);
+  std::vector<int> accumMapping;
+  std::vector<double> accumulator;
 
-  //device core local partitioning
-  //all of the code from here should
-  //be run on the device
-  int dev_id=0, ndev_cores=1, It1D=0, I=0;
+  //Get the partitioned size
+  //of the accumulator
+  int LocalAccumSize = nWalks*dev_lSize;
+  accumulator.resize(LocalAccumSize);
+  accumMapping.resize(LocalAccumSize);
   double zero(0.00);
+
+  //Mapping for addition of the accumulators
+  for(dev_id=0; dev_id<ndev_cores; dev_id++){
+    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, LocalAccumSize);
+    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, LocalAccumSize);
+    dev_lSize   = dev_ITend - dev_ITstart;
+    for(int I=dev_ITstart; I <= dev_ITend; I++){ 
+      accumMapping[I] = I
+    }
+  }
 
 //  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, It1D, I)
 //  #pragma omp target
   {
-    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, MPI_lSize);
-    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, MPI_lSize);
+    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, LocalAccumSize);
+    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, LocalAccumSize);
     dev_lSize   = dev_ITend - dev_ITstart;
+
     printf("dev_ITstart :  %d   dev_ITend :  %d   dev_lSize :  %d \n", dev_ITstart, dev_ITend, dev_lSize);
 
     int ValMax=0, ValMin=0;
@@ -118,6 +134,9 @@ int main(){
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       u_sol[It1D]=(InDomainFlag[It1D]==1)?solve<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed):zero;
     }
+
+
+
   }
 
 

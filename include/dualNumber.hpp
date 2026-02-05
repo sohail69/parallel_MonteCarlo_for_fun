@@ -1,5 +1,5 @@
 #pragma once
-#include "../UtilityObjects/macros.hpp"
+#include "globalMacros.hpp"
 
 /***************************************\
 !

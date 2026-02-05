@@ -1,4 +1,5 @@
 #pragma once
+#include "globalMacros.hpp"
 #include <mpi.h>
 
 class MPIComm{
@@ -12,8 +13,8 @@ class MPIComm{
     MPIComm(bool IS_MPI_ON);
 
     //Get MPI process data
-    int & getProcID(){ return procID;};
-    int & getNProcs(){ return nProcs;};
+    FORCE_INLINE int & getProcID(){ return procID;};
+    FORCE_INLINE int & getNProcs(){ return nProcs;};
 };
 
 //The constructor
