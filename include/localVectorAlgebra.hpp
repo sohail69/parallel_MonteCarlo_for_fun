@@ -144,7 +144,7 @@ REAL length( Vec3D<REAL> u ) { return sqrt<REAL>( u[0]*u[0] + u[1]*u[1] + u[2]*u
 //Find the polar angle of
 // a 2D vector
 template<typename REAL>
-REAL angleOf2DVec(Vec2D<REAL> u) { return atan2(u[1],u[0]); };
+REAL angleOf2DVec(Vec2D<REAL> u) { return atan2(u[1],u[0]);};
 
 //Rotate a 2D vector by
 //90-degrees on the plane

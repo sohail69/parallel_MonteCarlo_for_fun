@@ -41,7 +41,7 @@ REAL solve(Vec2D<REAL> x0,                                  // evaluation point
    const UINT maxSteps = 65536; // maximum walk length
 
 
-   uint32_t rqd_seed = 0UL;//+ uint32_t(seedVal);
+   uint32_t rqd_seed = 0UL + uint32_t(seedVal);
    REAL sum = 0.0; // running sum of boundary contributions
    for( UINT i = 0; i < nWalks; i++ ) {
       Vec2D<REAL> x = x0;        // start walk at the evaluation point

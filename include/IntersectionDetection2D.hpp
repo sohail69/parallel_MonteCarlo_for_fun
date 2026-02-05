@@ -89,9 +89,9 @@ REAL silhouetteDistancePolylines(Vec2D<REAL> x, const std::vector<Polyline2D<REA
 // these routines are not used by WoSt itself, but are rather used to check
 // whether a given evaluation point is actually inside the domain
 template<typename REAL, typename UINT>
-REAL signedAngle(Vec2D<REAL> x, const std::vector<Polyline2D<REAL>>& P )
+REAL signedAngle(const Vec2D<REAL> & x, const std::vector<Polyline2D<REAL>>& P )
 {
-  REAL Theta = 0.;
+  REAL Theta = REAL(0.00);
   for(UINT i = 0; i < P.size(); i++ ){
     for(UINT j = 0; j < P[i].size()-1; j++ ){
       Vec2D<REAL> y1 = P[i][j+1]-x;
@@ -108,11 +108,11 @@ REAL signedAngle(Vec2D<REAL> x, const std::vector<Polyline2D<REAL>>& P )
 // and Neumann curves.  We assume these curves form a collection of closed polygons,
 // and are given in a consistent counter-clockwise winding order.
 template<typename REAL, typename UINT>
-bool insideDomain(Vec2D<REAL> x
+bool insideDomain(const Vec2D<REAL> & x
                 , const std::vector<Polyline2D<REAL>>& boundaryDirichlet
                 , const std::vector<Polyline2D<REAL>>& boundaryNeumann )
 {
-   REAL Theta = signedAngle<REAL,UINT>( x, boundaryDirichlet ) + signedAngle<REAL,UINT>(x, boundaryNeumann);
+   REAL Theta = signedAngle<REAL,UINT>(x, boundaryDirichlet) + signedAngle<REAL,UINT>(x, boundaryNeumann);
    const REAL delta = 1e-4; // numerical tolerance
-   return abs<REAL>(Theta-2.*M_PI) < delta; // boundary winds around x exactly once
+   return (std::abs(Theta-2.*M_PI) < delta); // boundary winds around x exactly once
 }

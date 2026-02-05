@@ -47,19 +47,12 @@ void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirch
   // and are given with consistent counter-clockwise orientation
   bcDirch.clear();
   bcNeum.clear();
-  bcDirch.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 0.2})
-                                     ,Vec2D<REAL>({0.6, 0.0})
-                                     ,Vec2D<REAL>({1.0, 0.2}) }));
-  bcDirch.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 1.0})
-                                     ,Vec2D<REAL>({0.6, 0.8})
-                                     ,Vec2D<REAL>({0.2, 1.0}) }));
+  bcDirch.push_back({{ Vec2D<REAL>({0.2, 0.2}), Vec2D<REAL>({0.6, 0.0}), Vec2D<REAL>({1.0, 0.2}) }});
+  bcDirch.push_back({{ Vec2D<REAL>({1.0, 1.0}), Vec2D<REAL>({0.6, 0.8}), Vec2D<REAL>({0.2, 1.0}) }});
 
-  bcNeum.push_back(Polyline2D<REAL>({Vec2D<REAL>({1.0, 0.2})
-                                   , Vec2D<REAL>({0.8, 0.6})
-                                   , Vec2D<REAL>({1.0, 1.0}) }));
-  bcNeum.push_back(Polyline2D<REAL>({Vec2D<REAL>({0.2, 1.0})
-                                   , Vec2D<REAL>({0.0, 0.6})
-                                   , Vec2D<REAL>({0.2, 0.2}) }));
+  bcNeum.push_back({{ Vec2D<REAL>({1.0, 0.2}), Vec2D<REAL>({0.8, 0.6}), Vec2D<REAL>({1.0, 1.0}) }});
+  bcNeum.push_back({{ Vec2D<REAL>({0.2, 1.0}), Vec2D<REAL>({0.0, 0.6}), Vec2D<REAL>({0.2, 0.2}) }});
+
 };
 
 
@@ -104,7 +97,7 @@ int main(){
 
 //  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, It1D, I)
 //  #pragma omp target
-//  {
+  {
     dev_ITstart = firstIterator<int>(dev_id, ndev_cores, MPI_lSize);
     dev_ITend   = lastIterator<int>( dev_id, ndev_cores, MPI_lSize);
     dev_lSize   = dev_ITend - dev_ITstart;
@@ -117,15 +110,15 @@ int main(){
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       InDomainFlag[It1D] = (insideDomain<double,int>(x0, bcDirch, bcNeum) ? 1:0);
     }
-/*
+
     for(It1D=dev_ITstart; It1D<=dev_ITend; It1D++){
       I = It1D + MPI_ITstart;
       int rnd_seed = 0;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       u_sol[It1D]=(InDomainFlag[It1D]==1)?solve<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed):zero;
-    }*/
-//  }
+    }
+  }
 
 
   // Printing some extra data to
@@ -142,12 +135,12 @@ int main(){
   // Output the data into
   // a file (the original
   // used CSV's, IO tbd)
-  std::ofstream out( "out.csv" );
+  std::ofstream out( "out"+std::to_string(mpiComm.getProcID())+".csv" );
   for(int I=0; I<s; I++){
     for(int J=0; J<s; J++){
       int Iters[2] = {I,J};
       int Iter1D =  BHMeshFwdIter<double,int,2>(Iters, BHMeshData);
-      out << (( InDomainFlag[Iter1D]==0) ? 0 : 123456);
+      out <<  ((InDomainFlag[Iter1D] == 1)? 1234:0);
       if( J < s-1 ) out << ",";
     }
     out << std::endl;
