@@ -8,7 +8,7 @@
 template<typename REAL>
 Vec2D<REAL> closestPoint( Vec2D<REAL> x, Vec2D<REAL> a, Vec2D<REAL> b ) {
    Vec2D<REAL> u = b-a;
-   REAL t = std::clamp( dot(x-a,u)/dot(u,u), 0.0, 1.0 );
+   REAL t = std::clamp( dot<REAL>(x-a,u)/dot<REAL>(u,u), 0.0, 1.0 );
    return (1.0-t)*a + t*b;
 };
 

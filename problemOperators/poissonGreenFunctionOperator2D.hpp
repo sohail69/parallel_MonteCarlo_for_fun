@@ -1,4 +1,5 @@
 #pragma once
+#include <random>
 #include <cstdio>
 #include <vector>
 #include <functional>
@@ -39,7 +40,8 @@ REAL solve(Vec2D<REAL> x0,                                  // evaluation point
    const UINT nWalks = 65536;   // number of Monte Carlo samples
    const UINT maxSteps = 65536; // maximum walk length
 
-   printf("Hello I am seed:  %d",seedVal);
+
+   uint32_t rqd_seed = 0UL;//+ uint32_t(seedVal);
    REAL sum = 0.0; // running sum of boundary contributions
    for( UINT i = 0; i < nWalks; i++ ) {
       Vec2D<REAL> x = x0;        // start walk at the evaluation point
@@ -48,24 +50,22 @@ REAL solve(Vec2D<REAL> x0,                                  // evaluation point
 
       REAL r, dDirichlet, dSilhouette; // radii used to define star shaped region
       UINT steps = 0;
-      uint32_t rqd_seed = 0UL + uint32_t(seedVal);
       do { // loop until the walk hits the Dirichlet boundary
          // compute the radius of the largest star-shaped region
          dDirichlet = distancePolylines<REAL,UINT>( x, boundaryDirichlet );
          dSilhouette = silhouetteDistancePolylines<REAL,UINT>( x, boundaryNeumann );
-         r = std::max( rMin, std::min( dDirichlet, dSilhouette ));
+         r = std::max( rMin, std::min(dDirichlet,dSilhouette) );
 
          // intersect a ray with the star-shaped region boundary
-//         REAL theta = random<double>( -M_PI, M_PI ); //Doesn't work for me
-         REAL theta = my_random<double>( -M_PI, M_PI, rqd_seed);
-         rqd_seed = randqd_uint32(rqd_seed);
+         REAL theta = random<double>( -M_PI, M_PI );
+//         rqd_seed = randqd_uint32(rqd_seed);
+//         REAL theta = my_random<double>( -M_PI, M_PI, rqd_seed);
 
          if( onBoundary ) { // sample from a hemisphere around the normal
-            theta = theta/2. + angleOf2DVec<REAL>(n);
+            theta = theta/REAL(2.) + angleOf2DVec<REAL>(n);
          }
          Vec2D<REAL> v{ cos(theta), sin(theta) }; // unit ray direction
          x = intersectPolylines<REAL,UINT>( x, v, r, boundaryNeumann, n, onBoundary );
-
          steps++;
       }
       while(dDirichlet > eps && steps < maxSteps);
