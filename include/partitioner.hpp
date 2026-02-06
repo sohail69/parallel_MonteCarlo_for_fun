@@ -4,29 +4,20 @@
 
 /***************************\
 ! Linear partitioning
-! routines
+! routines for problems
+! where the geometric size
+! is bigger than the number
+! of threads/MPI-procs 
+! etc...
 !
 ! Starts numbering from 0
 \***************************/
-//Minimum partition size
-template<typename UINT>
-FORCE_INLINE UINT minPartitionSize(const UINT nPartitions, const UINT nsize){
-  return nsize/nPartitions;
-};
-
-//Remainder of uniform
-//minimal partitioning
-template<typename UINT>
-FORCE_INLINE UINT partitionRemainder(const UINT nPartitions, const UINT nsize){
-  return (nsize - nPartitions*minPartitionSize(nPartitions, nsize));
-};
-
 //Starting iterator of the
 //processing unit
 template<typename UINT>
 FORCE_INLINE UINT firstIterator(const UINT tiD, const UINT nPartitions, const UINT nsize){
-  UINT rem  = partitionRemainder(nPartitions, nsize);
-  UINT Nmin = minPartitionSize(nPartitions, nsize);
+  UINT rem  =  nsize%nPartitions;
+  UINT Nmin = nsize/nPartitions;
   UINT tstart0 = tiD*(Nmin+1) + 1;
   UINT tstart1 = tiD*Nmin + rem + 1;
   UINT tstart2 = tiD*Nmin + 1;
@@ -37,8 +28,8 @@ FORCE_INLINE UINT firstIterator(const UINT tiD, const UINT nPartitions, const UI
 //processing unit
 template<typename UINT>
 FORCE_INLINE UINT lastIterator(const UINT tiD, const UINT nPartitions, const UINT nsize){
-  UINT rem  = partitionRemainder(nPartitions, nsize);
-  UINT Nmin = minPartitionSize(nPartitions, nsize);
+  UINT rem  =  nsize%nPartitions;
+  UINT Nmin = nsize/nPartitions;
   UINT tnend0 = (tiD+1)*(Nmin+1);
   UINT tnend1 = (tiD+1)*Nmin+ rem;
   UINT tnend2 = (tiD+1)*Nmin;
@@ -60,8 +51,8 @@ FORCE_INLINE UINT lastIterator(const UINT tiD, const UINT nPartitions, const UIN
 //partitioned problem
 template<typename UINT>
 FORCE_INLINE UINT findIteratorOwner(const UINT GnodeID, const UINT nPartitions, const UINT nsize){
-  UINT rem    = partitionRemainder(nPartitions, nsize);
-  UINT Nmin   = minPartitionSize(nPartitions, nsize);
+  UINT rem    =  nsize%nPartitions;
+  UINT Nmin   = nsize/nPartitions;
   UINT Nmax   = (rem == 0) ? Nmin : (Nmin + 1);
   UINT rNsize = rem*Nmax;
   UINT A      = GnodeID - rNsize;
@@ -76,26 +67,14 @@ FORCE_INLINE UINT findIteratorOwner(const UINT GnodeID, const UINT nPartitions, 
 ! Partitioning a problem
 ! that uses accumulators 
 ! for reduce operations
-! assuming an existing 
-! geometric partitioning
+! this is for cases where
+! the cores exceed the
+! problem size geometrically
+! but not the number of
+! samples
 \***************************/
-//Find optimal~heuristic
-//accumulator size
-template<typename UINT>
-FORCE_INLINE UINT findAccumPartitionSize(const UINT pID, const UINT nPartitions, const UINT nSize, const UINT AccumSize){
-//  if(nAccum < nPartitions)
-  return UINT(0);
-};
-
-//Find optimal~heuristic
-//number of accumulators
-template<typename UINT>
-FORCE_INLINE UINT findNAccumulators(const UINT pID, const UINT nPartitions, const UINT nSize, const UINT AccumSize){
-//  if(nAccum < nPartitions)
-,   nSize*AccumSize
-  return UINT(0);
-};
-
+//Find the number of threads per
+//unit geometric partition
 
 
 #endif

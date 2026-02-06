@@ -4,9 +4,40 @@
 #include <vector>
 #include <functional>
 #include "../include/globalMacros.hpp"
-#include "../include/RNG.hpp"
+#include "../include/Random/RNG.hpp"
 #include "../include/localVectorAlgebra.hpp"
 #include "../include/IntersectionDetection2D.hpp"
+
+//Simple block mesh data
+//for uniform grids
+template<typename REAL, typename UINT, UINT dim>
+void simpleBlockMeshBuild(const REAL & dx, const UINT & size, blockHyperMeshData<REAL,UINT,dim> & BHMeshData){
+  for(UINT I=0; I<dim; I++){
+    BHMeshData.sizes[I]  = size;
+    BHMeshData.offset[I] = REAL(0.00);
+    for(UINT J=0; J<dim; J++){
+      BHMeshData.dx[I*dim + J] = ((I==J) ? dx : REAL(0.00));
+    }
+  }
+}
+
+//Simple imbedded boundary
+//description data
+template<typename REAL>
+void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirch
+                    , std::vector<Polyline2D<REAL>> & bcNeum)
+{
+  // for simplicity, in this code we assume that the Dirichlet and Neumann
+  // boundary polylines form a collection of closed polygons (possibly with holes),
+  // and are given with consistent counter-clockwise orientation
+  bcDirch.clear();
+  bcNeum.clear();
+  bcDirch.push_back({{ Vec2D<REAL>({0.2, 0.2}), Vec2D<REAL>({0.6, 0.0}), Vec2D<REAL>({1.0, 0.2}) }});
+  bcDirch.push_back({{ Vec2D<REAL>({1.0, 1.0}), Vec2D<REAL>({0.6, 0.8}), Vec2D<REAL>({0.2, 1.0}) }});
+  bcNeum.push_back({{  Vec2D<REAL>({1.0, 0.2}), Vec2D<REAL>({0.8, 0.6}), Vec2D<REAL>({1.0, 1.0}) }});
+  bcNeum.push_back({{  Vec2D<REAL>({0.2, 1.0}), Vec2D<REAL>({0.0, 0.6}), Vec2D<REAL>({0.2, 0.2}) }});
+};
+
 
 /**************************************\
 ! solves a Laplace equation Delta u = 0

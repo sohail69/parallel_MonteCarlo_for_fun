@@ -23,47 +23,16 @@
 #include "include/IntersectionDetection2D.hpp"
 #include "problemOperators/poissonGreenFunctionOperator2D.hpp"
 
-//Simple block mesh data
-//for uniform quad
-template<typename REAL, typename UINT, UINT dim>
-void simpleBlockMeshBuild(const REAL & dx, const UINT & size, blockHyperMeshData<REAL,UINT,dim> & BHMeshData){
-  for(UINT I=0; I<dim; I++){
-    BHMeshData.sizes[I]  = size;
-    BHMeshData.offset[I] = REAL(0.00);
-    for(UINT J=0; J<dim; J++){
-      BHMeshData.dx[I*dim + J] = ((I==J) ? dx : REAL(0.00));
-    }
-  }
-}
-
-//Simple imbedded boundary
-//description data
-template<typename REAL>
-void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirch
-                    , std::vector<Polyline2D<REAL>> & bcNeum)
-{
-  // for simplicity, in this code we assume that the Dirichlet and Neumann
-  // boundary polylines form a collection of closed polygons (possibly with holes),
-  // and are given with consistent counter-clockwise orientation
-  bcDirch.clear();
-  bcNeum.clear();
-  bcDirch.push_back({{ Vec2D<REAL>({0.2, 0.2}), Vec2D<REAL>({0.6, 0.0}), Vec2D<REAL>({1.0, 0.2}) }});
-  bcDirch.push_back({{ Vec2D<REAL>({1.0, 1.0}), Vec2D<REAL>({0.6, 0.8}), Vec2D<REAL>({0.2, 1.0}) }});
-  bcNeum.push_back({{  Vec2D<REAL>({1.0, 0.2}), Vec2D<REAL>({0.8, 0.6}), Vec2D<REAL>({1.0, 1.0}) }});
-  bcNeum.push_back({{  Vec2D<REAL>({0.2, 1.0}), Vec2D<REAL>({0.0, 0.6}), Vec2D<REAL>({0.2, 0.2}) }});
-};
-
-
 int main(){
   //The MPI communicator
   bool IS_MPI_ON=false;
   MPIComm mpiComm(IS_MPI_ON);
 
   //Problem base size
-  const int nWalks = 65536;      // number of Monte Carlo samples
-  const int s = 128;             //Image length-width
-  const int nSize = s*s;         //Total image size
-  const double dx= 1.0/double(s);//Image increment
+  const int nWalksPerThread = 65536; // number of Monte Carlo samples per thread
+  const int s = 128;                 //Image length-width
+  const int nSize = s*s;             //Total image size
+  const double dx= 1.0/double(s);    //Image increment
 
   //Generate the blockMesh from
   //the base size (2D-Quad) and
