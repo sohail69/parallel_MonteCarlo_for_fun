@@ -82,8 +82,17 @@ FORCE_INLINE UINT findIteratorOwner(const UINT GnodeID, const UINT nPartitions, 
 //Find optimal~heuristic
 //accumulator size
 template<typename UINT>
-FORCE_INLINE UINT findAccumPartitionSize(const UINT GnodeID, const UINT nPartitions, const UINT nAccum, const UINT nAccumSize){
+FORCE_INLINE UINT findAccumPartitionSize(const UINT pID, const UINT nPartitions, const UINT nSize, const UINT AccumSize){
 //  if(nAccum < nPartitions)
+  return UINT(0);
+};
+
+//Find optimal~heuristic
+//number of accumulators
+template<typename UINT>
+FORCE_INLINE UINT findNAccumulators(const UINT pID, const UINT nPartitions, const UINT nSize, const UINT AccumSize){
+//  if(nAccum < nPartitions)
+,   nSize*AccumSize
   return UINT(0);
 };
 

@@ -135,8 +135,6 @@ int main(){
       u_sol[It1D]=(InDomainFlag[It1D]==1)?solve<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed):zero;
     }
 
-
-
   }
 
 
