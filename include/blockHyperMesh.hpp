@@ -6,7 +6,7 @@
 //to generate and oriented
 //block hyper mesh.
 template<typename REAL, typename UINT, UINT dim>
-PACKSTRUCT struct blockHyperMeshData{
+struct PACKSTRUCT blockHyperMeshData{
    UINT sizes[dim];
    REAL offset[dim], dx[dim*dim];
 };

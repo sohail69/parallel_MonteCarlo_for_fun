@@ -1,6 +1,6 @@
 #pragma once
 #include <random>
-#include "globalMacros.hpp"
+#include "../globalMacros.hpp"
 
 // returns a random value in the range [rMin,rMax]
 template<typename REAL>

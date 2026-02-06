@@ -29,7 +29,8 @@ int main(){
   MPIComm mpiComm(IS_MPI_ON);
 
   //Problem base size
-  const int nWalksPerThread = 65536; // number of Monte Carlo samples per thread
+  const int nWalks = 65536;          //Total number of Monte Carlo samples
+  const int nWalksPerThread = 65536; //Number of Monte Carlo samples per thread
   const int s = 128;                 //Image length-width
   const int nSize = s*s;             //Total image size
   const double dx= 1.0/double(s);    //Image increment
@@ -70,6 +71,7 @@ int main(){
   double zero(0.00);
 
   //Mapping for addition of the accumulators
+/*
   for(dev_id=0; dev_id<ndev_cores; dev_id++){
     dev_ITstart = firstIterator<int>(dev_id, ndev_cores, LocalAccumSize);
     dev_ITend   = lastIterator<int>( dev_id, ndev_cores, LocalAccumSize);
@@ -77,7 +79,7 @@ int main(){
     for(int I=dev_ITstart; I <= dev_ITend; I++){ 
       accumMapping[I] = I
     }
-  }
+  }*/
 
 //  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, It1D, I)
 //  #pragma omp target
@@ -85,7 +87,6 @@ int main(){
     dev_ITstart = firstIterator<int>(dev_id, ndev_cores, LocalAccumSize);
     dev_ITend   = lastIterator<int>( dev_id, ndev_cores, LocalAccumSize);
     dev_lSize   = dev_ITend - dev_ITstart;
-
     printf("dev_ITstart :  %d   dev_ITend :  %d   dev_lSize :  %d \n", dev_ITstart, dev_ITend, dev_lSize);
 
     int ValMax=0, ValMin=0;
@@ -103,7 +104,6 @@ int main(){
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       u_sol[It1D]=(InDomainFlag[It1D]==1)?solve<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed):zero;
     }
-
   }
 
 

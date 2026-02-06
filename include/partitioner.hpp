@@ -18,10 +18,10 @@ template<typename UINT>
 FORCE_INLINE UINT firstIterator(const UINT tiD, const UINT nPartitions, const UINT nsize){
   UINT rem  =  nsize%nPartitions;
   UINT Nmin = nsize/nPartitions;
-  UINT tstart0 = tiD*(Nmin+1) + 1;
-  UINT tstart1 = tiD*Nmin + rem + 1;
-  UINT tstart2 = tiD*Nmin + 1;
-  return ((rem!=0) ? ((tiD<rem)? tstart0 : tstart1) : tstart2) - 1;
+  UINT tstart0 = tiD*(Nmin+1);
+  UINT tstart1 = tiD*Nmin + rem;
+  UINT tstart2 = tiD*Nmin;
+  return ((rem!=0) ? ((tiD<rem)? tstart0 : tstart1) : tstart2);
 };
 
 //Last iterator of the
@@ -73,9 +73,33 @@ FORCE_INLINE UINT findIteratorOwner(const UINT GnodeID, const UINT nPartitions, 
 ! but not the number of
 ! samples
 \***************************/
-//Find the number of threads per
-//unit geometric partition
+//Find the number of accumulators
+//belonging to a given partition
+/*
+template<typename UINT>
+FORCE_INLINE UINT FindLocalNumberOfAccums(const UINT PartID, const UINT nDevThreads, const UINT nLocalParts){
+  UINT remThreads = nDevThreads%nLocalParts;
+  UINT minThreads = nDevThreads/nLocalParts;
 
+  PartID*(minThreads+1);
+  UINT tstart0 = PartID*(Nmin+1) + 1;
+  UINT tstart1 = PartID*Nmin + rem + 1;
+  UINT tstart2 = PartID*Nmin + 1;
+  return ((rem!=0) ? ((PartID<rem)? tstart0 : tstart1) : tstart2);
+};*/
+
+//Find the geometric owner of a
+//given accumlator sample
+/*
+template<typename UINT>
+FORCE_INLINE UINT FindAccumBasePartition(const UINT partID, const UINT nPartitions, const UINT nsize){
+  UINT rem  =  nsize%nPartitions;
+  UINT Nmin = nsize/nPartitions;
+  UINT tstart0 = tiD*(Nmin+1) + 1;
+  UINT tstart1 = tiD*Nmin + rem + 1;
+  UINT tstart2 = tiD*Nmin + 1;
+  return ((rem!=0) ? ((tiD<rem)? tstart0 : tstart1) : tstart2) - 1;
+};*/
 
 #endif
 

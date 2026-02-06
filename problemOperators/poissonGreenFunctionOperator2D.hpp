@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include "../include/globalMacros.hpp"
+#include "../include/blockHyperMesh.hpp"
 #include "../include/Random/RNG.hpp"
 #include "../include/localVectorAlgebra.hpp"
 #include "../include/IntersectionDetection2D.hpp"
