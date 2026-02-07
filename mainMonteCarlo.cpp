@@ -46,63 +46,58 @@ int main(){
   //Partitioning the data on multiple
   //levels
   int MPI_lSize, MPI_ITstart, MPI_ITend;
-  int dev_lSize, dev_ITstart, dev_ITend;
+  int ndev_cores=1000;
 
   //MPI global partitioning (Geometric paritioning of the domain)
   MPI_ITstart = firstIterator<int>(mpiComm.getProcID(), mpiComm.getNProcs(), nSize);
   MPI_ITend   = lastIterator<int>( mpiComm.getProcID(), mpiComm.getNProcs(), nSize);
   MPI_lSize   = MPI_ITend - MPI_ITstart;
 
-  //device local partitioning
-  int dev_id=0, ndev_cores=1, It1D=0, I=0;
-
   //Generate a vector for storing
   //the local solution data
-  std::vector<int> InDomainFlag;   InDomainFlag.resize(MPI_lSize);
-  std::vector<double> u_sol;       u_sol.resize(MPI_lSize);
-  std::vector<int> accumMapping;
-  std::vector<double> accumulator;
-
-  //Get the partitioned size
-  //of the accumulator
-  int LocalAccumSize = nWalks*dev_lSize;
-  accumulator.resize(LocalAccumSize);
-  accumMapping.resize(LocalAccumSize);
+  std::vector<int>    InDomainFlag(MPI_lSize);
+  std::vector<double> u_sol(MPI_lSize);
+  std::vector<double> accumulator(ndev_cores);
   double zero(0.00);
 
-  //Mapping for addition of the accumulators
-/*
-  for(dev_id=0; dev_id<ndev_cores; dev_id++){
-    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, LocalAccumSize);
-    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, LocalAccumSize);
-    dev_lSize   = dev_ITend - dev_ITstart;
-    for(int I=dev_ITstart; I <= dev_ITend; I++){ 
-      accumMapping[I] = I
-    }
-  }*/
-
-//  #pragma omp default(shared) private(dev_lSize, dev_ITstart, dev_ITend, dev_id, It1D, I)
-//  #pragma omp target
+  #pragma omp target
   {
-    dev_ITstart = firstIterator<int>(dev_id, ndev_cores, LocalAccumSize);
-    dev_ITend   = lastIterator<int>( dev_id, ndev_cores, LocalAccumSize);
-    dev_lSize   = dev_ITend - dev_ITstart;
-    printf("dev_ITstart :  %d   dev_ITend :  %d   dev_lSize :  %d \n", dev_ITstart, dev_ITend, dev_lSize);
+    int threadID = omp_get_thread_num();
+    int ParentAccumulator = FindAccumParentID<int>(threadID, ndev_cores, MPI_lSize);
 
-    int ValMax=0, ValMin=0;
-    for(It1D=dev_ITstart; It1D <= dev_ITend; It1D++){
-      I = It1D + MPI_ITstart;
+    //First find all points that fall
+    //inside the domain
+    if(threadID < MPI_lSize){
+      int I = threadID + MPI_ITstart;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
-      InDomainFlag[It1D] = (insideDomain<double,int>(x0, bcDirch, bcNeum) ? 1:0);
+      InDomainFlag[threadID] = (insideDomain<double,int>(x0, bcDirch, bcNeum) ? 1:0);
     }
+    #pragma omp barrier
 
+    //Sample the Monte-Carlo problem
+    //on the accumulators
+    accumulator[threadID] = double(0.00);
     for(It1D=dev_ITstart; It1D<=dev_ITend; It1D++){
       I = It1D + MPI_ITstart;
       int rnd_seed = 0;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
-      u_sol[It1D]=(InDomainFlag[It1D]==1)?solve<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed):zero;
+      double val = poissonWalk<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed);
+      accumulator[threadID] += (InDomainFlag[ParentAccumulator]==1)? val : zero;
+    }
+
+    //Aggregate all the accumulators on
+    //the solution vector
+    #pragma omp barrier
+    if(threadID < MPI_lSize){
+      int nAccums  = FORCE_INLINE UINT FindLocalNumberOfAccums<int>(threadID, ndev_cores, MPI_lSize);
+      int devStart = FindPartIDFirstLocalAccumPos<int>(threadID, ndev_cores, MPI_lSize);
+      u_sol[threadID] = double(0.00);
+      for(int I=devStart; I<(devStart+nAccums); I++){
+        u_sol[threadID] += accumulator[I];
+      }
+      u_sol[threadID] /= double(nWalks);
     }
   }
 
@@ -121,6 +116,7 @@ int main(){
   // Output the data into
   // a file (the original
   // used CSV's, IO tbd)
+/*
   std::ofstream out( "out"+std::to_string(mpiComm.getProcID())+".csv" );
   for(int I=0; I<s; I++){
     for(int J=0; J<s; J++){
@@ -131,10 +127,11 @@ int main(){
     }
     out << std::endl;
   }
-  out.close();
+  out.close();*/
 
   //clean-up
   InDomainFlag.clear();
+  accumulator.clear();
   u_sol.clear();
   MPI_Finalize();
   return 0;

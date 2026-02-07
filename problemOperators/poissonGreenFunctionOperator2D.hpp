@@ -62,11 +62,11 @@ FORCE_INLINE REAL lines( Vec2D<REAL> x ) {
 
 
 template<typename REAL, typename UINT>
-FORCE_INLINE REAL solve(Vec2D<REAL> x0,                                  // evaluation point
-           std::vector<Polyline2D<REAL>> boundaryDirichlet, // absorbing part of the boundary
-           std::vector<Polyline2D<REAL>> boundaryNeumann,   // reflecting part of the boundary
-           std::function<REAL(Vec2D<REAL>)> g,              // Dirichlet boundary values
-           UINT seedVal)
+FORCE_INLINE REAL poissonWalk(Vec2D<REAL> x0,                                  // evaluation point
+                              std::vector<Polyline2D<REAL>> boundaryDirichlet, // absorbing part of the boundary
+                              std::vector<Polyline2D<REAL>> boundaryNeumann,   // reflecting part of the boundary
+                              std::function<REAL(Vec2D<REAL>)> g,              // Dirichlet boundary values
+                              UINT seedVal)
 {
    const REAL eps = 0.0001;     // stopping tolerance
    const REAL rMin = 0.0001;    // minimum step size
@@ -76,7 +76,7 @@ FORCE_INLINE REAL solve(Vec2D<REAL> x0,                                  // eval
 
    uint32_t rqd_seed = 0UL + uint32_t(seedVal);
    REAL sum = 0.0; // running sum of boundary contributions
-   for( UINT i = 0; i < nWalks; i++ ) {
+//   for( UINT i = 0; i < nWalks; i++ ) {
       Vec2D<REAL> x = x0;        // start walk at the evaluation point
       Vec2D<REAL> n={ 0.0, 0.0 };// assume x0 is an interior point, and has no normal
       bool onBoundary = false;   // flag whether x is on the interior or boundary
@@ -101,10 +101,9 @@ FORCE_INLINE REAL solve(Vec2D<REAL> x0,                                  // eval
          Vec2D<REAL> v{ cos(theta), sin(theta) }; // unit ray direction
          x = intersectPolylines<REAL,UINT>( x, v, r, boundaryNeumann, n, onBoundary );
          steps++;
-      }
-      //stop if we hit the Dirichlet boundary, or the walk is too long
+      } //stop if we hit the Dirichlet boundary, or the walk is too long
       if( steps >= maxSteps ) printf("Hit max steps \n");
       sum += g(x); // accumulate contribution of the boundary value
-   }
-   return sum/nWalks; // Monte Carlo estimate
+//   }
+   return sum; // Single random walk
 }

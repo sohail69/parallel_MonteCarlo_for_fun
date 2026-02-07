@@ -71,36 +71,47 @@ FORCE_INLINE UINT findIteratorOwner(const UINT GnodeID, const UINT nPartitions, 
 ! the cores exceed the
 ! problem size geometrically
 ! but not the number of
-! samples
+! samples at each point
 \***************************/
 //Find the number of accumulators
-//belonging to a given partition
-/*
+//sample-sets belonging to a
+//given partition
 template<typename UINT>
-FORCE_INLINE UINT FindLocalNumberOfAccums(const UINT PartID, const UINT nDevThreads, const UINT nLocalParts){
+FORCE_INLINE UINT FindLocalNumberOfAccums(const UINT &PartID, const UINT &nDevThreads, const UINT &nLocalParts){
   UINT remThreads = nDevThreads%nLocalParts;
   UINT minThreads = nDevThreads/nLocalParts;
+  return ((remThreads==0)or(PartID >= remThreads))? minThreads : minThreads+1;
+};
 
-  PartID*(minThreads+1);
-  UINT tstart0 = PartID*(Nmin+1) + 1;
-  UINT tstart1 = PartID*Nmin + rem + 1;
-  UINT tstart2 = PartID*Nmin + 1;
-  return ((rem!=0) ? ((PartID<rem)? tstart0 : tstart1) : tstart2);
-};*/
-
-//Find the geometric owner of a
-//given accumlator sample
-/*
+//Find the geometric parentID of a
+//given accumlator sample-set
 template<typename UINT>
-FORCE_INLINE UINT FindAccumBasePartition(const UINT partID, const UINT nPartitions, const UINT nsize){
-  UINT rem  =  nsize%nPartitions;
-  UINT Nmin = nsize/nPartitions;
-  UINT tstart0 = tiD*(Nmin+1) + 1;
-  UINT tstart1 = tiD*Nmin + rem + 1;
-  UINT tstart2 = tiD*Nmin + 1;
-  return ((rem!=0) ? ((tiD<rem)? tstart0 : tstart1) : tstart2) - 1;
-};*/
+FORCE_INLINE UINT FindAccumParentID(const UINT &threadID, const UINT &nDevThreads, const UINT &nLocalParts){
+  UINT remThreads = nDevThreads%nLocalParts;
+  UINT minThreads = nDevThreads/nLocalParts;
+  UINT maxThreads = (remThreads == 0) ? minThreads : (minThreads+1);
+  UINT Dividend   = (threadID - remThreads*maxThreads);
 
+  UINT Guess1 = threadID/maxThreads;
+  UINT Guess2 = (Dividend/minThreads) + remThreads;
+  UINT parent_partition = (Dividend <= 0) ? Guess1 : Guess2;
+  return parent_partition;
+};
+
+//Find the first position of an 
+//accumulator belonging to a given
+//parentID partition
+template<typename UINT>
+FORCE_INLINE UINT FindPartIDFirstLocalAccumPos(const UINT &PartID, const UINT &nDevThreads, const UINT &nLocalParts){
+  UINT remThreads = nDevThreads%nLocalParts;
+  UINT minThreads = nDevThreads/nLocalParts;
+  UINT maxThreads = (remThreads == 0) ? minThreads : (minThreads+1);
+
+  UINT Guess1 = PartID*maxThreads;
+  UINT Guess2 = (PartID-remThreads)*minThreads + remThreads*maxThreads;
+  UINT AccumStartPos = ((remThreads != 0)or(PartID < remThreads)) ? Guess1 : Guess2;
+  return AccumStartPos;
+};
 #endif
 
 
