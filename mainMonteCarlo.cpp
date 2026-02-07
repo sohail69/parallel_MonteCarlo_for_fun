@@ -23,6 +23,11 @@
 #include "include/IntersectionDetection2D.hpp"
 #include "problemOperators/poissonGreenFunctionOperator2D.hpp"
 
+//
+// This version assumes that the number of device cores
+// exceeds the number of 
+//
+
 int main(){
   //The MPI communicator
   bool IS_MPI_ON=false;
@@ -30,7 +35,7 @@ int main(){
 
   //Problem base size
   const int nWalks = 65536;          //Total number of Monte Carlo samples
-  const int nWalksPerThread = 65536; //Number of Monte Carlo samples per thread
+  const int nWalksPerThread = 65536/542; //Number of Monte Carlo samples per thread
   const int s = 128;                 //Image length-width
   const int nSize = s*s;             //Total image size
   const double dx= 1.0/double(s);    //Image increment
@@ -78,7 +83,7 @@ int main(){
     //Sample the Monte-Carlo problem
     //on the accumulators
     accumulator[threadID] = double(0.00);
-    for(It1D=dev_ITstart; It1D<=dev_ITend; It1D++){
+    for(int IWalk=0; IWalk<nWalksPerThread; IWalk++){
       I = It1D + MPI_ITstart;
       int rnd_seed = 0;
       Vec2D<double> x0;
