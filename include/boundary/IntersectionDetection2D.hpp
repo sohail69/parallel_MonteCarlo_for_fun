@@ -1,9 +1,9 @@
 #pragma once
 #include <array>
 #include <vector>
-#include "globalMacros.hpp"
+#include "../globalMacros.hpp"
 #include "localVectorAlgebra.hpp"
-#include "templatedMaths/tCmath.hpp"
+#include "../templatedMaths/tCmath.hpp"
 
 
 // returns the closest point to x on a segment with endpoints a and b

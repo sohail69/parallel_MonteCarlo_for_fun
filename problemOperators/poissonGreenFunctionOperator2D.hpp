@@ -6,8 +6,8 @@
 #include "../include/globalMacros.hpp"
 #include "../include/blockHyperMesh.hpp"
 #include "../include/Random/RNG.hpp"
-#include "../include/localVectorAlgebra.hpp"
-#include "../include/IntersectionDetection2D.hpp"
+#include "../include/boundary/localVectorAlgebra.hpp"
+#include "../include/boundary/IntersectionDetection2D.hpp"
 
 //Simple block mesh data
 //for uniform grids

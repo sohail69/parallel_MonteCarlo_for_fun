@@ -16,11 +16,15 @@
 #include <cstdio>
 #include <random>
 
+//Parallel libs
+#include <omp.h>
 #include "include/MPIcomm.hpp"
 #include "include/partitioner.hpp"
+
+//Geometry libs
 #include "include/blockHyperMesh.hpp"
-#include "include/localVectorAlgebra.hpp"
-#include "include/IntersectionDetection2D.hpp"
+#include "include/boundary/localVectorAlgebra.hpp"
+#include "include/boundary/IntersectionDetection2D.hpp"
 #include "problemOperators/poissonGreenFunctionOperator2D.hpp"
 
 //
@@ -34,11 +38,11 @@ int main(){
   MPIComm mpiComm(IS_MPI_ON);
 
   //Problem base size
-  const int nWalks = 65536;          //Total number of Monte Carlo samples
+  const int nWalks = 65536;              //Total number of Monte Carlo samples
   const int nWalksPerThread = 65536/542; //Number of Monte Carlo samples per thread
-  const int s = 128;                 //Image length-width
-  const int nSize = s*s;             //Total image size
-  const double dx= 1.0/double(s);    //Image increment
+  const int s = 128;                     //Image length-width
+  const int nSize = s*s;                 //Total image size
+  const double dx= 1.0/double(s);        //Image increment
 
   //Generate the blockMesh from
   //the base size (2D-Quad) and
@@ -65,6 +69,7 @@ int main(){
   std::vector<double> accumulator(ndev_cores);
   double zero(0.00);
 
+////////  #pragma omp shared() private(i)
   #pragma omp target
   {
     int threadID = omp_get_thread_num();
@@ -84,7 +89,7 @@ int main(){
     //on the accumulators
     accumulator[threadID] = double(0.00);
     for(int IWalk=0; IWalk<nWalksPerThread; IWalk++){
-      I = It1D + MPI_ITstart;
+      int I = ParentAccumulator + MPI_ITstart;
       int rnd_seed = 0;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
@@ -96,7 +101,7 @@ int main(){
     //the solution vector
     #pragma omp barrier
     if(threadID < MPI_lSize){
-      int nAccums  = FORCE_INLINE UINT FindLocalNumberOfAccums<int>(threadID, ndev_cores, MPI_lSize);
+      int nAccums  = FindLocalNumberOfAccums<int>(threadID, ndev_cores, MPI_lSize);
       int devStart = FindPartIDFirstLocalAccumPos<int>(threadID, ndev_cores, MPI_lSize);
       u_sol[threadID] = double(0.00);
       for(int I=devStart; I<(devStart+nAccums); I++){
@@ -121,18 +126,7 @@ int main(){
   // Output the data into
   // a file (the original
   // used CSV's, IO tbd)
-/*
-  std::ofstream out( "out"+std::to_string(mpiComm.getProcID())+".csv" );
-  for(int I=0; I<s; I++){
-    for(int J=0; J<s; J++){
-      int Iters[2] = {I,J};
-      int Iter1D =  BHMeshFwdIter<double,int,2>(Iters, BHMeshData);
-      out <<  ((InDomainFlag[Iter1D] == 1)? 1234:0);
-      if( J < s-1 ) out << ",";
-    }
-    out << std::endl;
-  }
-  out.close();*/
+
 
   //clean-up
   InDomainFlag.clear();

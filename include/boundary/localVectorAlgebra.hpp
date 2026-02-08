@@ -1,8 +1,8 @@
 #pragma once
 #include <array>
 #include <vector>
-#include "globalMacros.hpp"
-#include "templatedMaths/tCmath.hpp"
+#include "../globalMacros.hpp"
+#include "../templatedMaths/tCmath.hpp"
 
 // use array to implement 2D and 3D vectors
 template<typename REAL>
