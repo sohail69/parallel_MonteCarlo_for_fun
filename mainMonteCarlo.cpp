@@ -48,7 +48,7 @@ int main(){
   //the base size (2D-Quad) and
   //a 2D polyline boundary
   blockHyperMeshData<double,int,2> BHMeshData;
-  std::vector<Polyline2D<double>> bcDirch, bcNeum;
+  std::vector<Polyline2D<double>>  bcDirch, bcNeum;
   simpleBlockMeshBuild<double,int,2>(dx, s, BHMeshData);
   simple2DBoundary<double>(bcDirch,  bcNeum);
 
@@ -58,27 +58,41 @@ int main(){
   int ndev_cores=1000;
 
   //MPI global partitioning (Geometric paritioning of the domain)
-  MPI_ITstart = firstIterator<int>(mpiComm.getProcID(), mpiComm.getNProcs(), nSize);
-  MPI_ITend   = lastIterator<int>( mpiComm.getProcID(), mpiComm.getNProcs(), nSize);
-  MPI_lSize   = MPI_ITend - MPI_ITstart;
+  partitionProblem<int>(mpiComm.getProcID(),mpiComm.getNProcs(),nSize,MPI_ITstart,MPI_ITend,MPI_lSize);
+
+  //Iterators and other thread local
+  //variables
+  int rnd_seed=0, threadID=0, parentMPI_ID=0, nAccums=0, AccumStart=0;
+  int nTotAccumulators=0;
 
   //Generate a vector for storing
   //the local solution data
   std::vector<int>    InDomainFlag(MPI_lSize);
   std::vector<double> u_sol(MPI_lSize);
-  std::vector<double> accumulator(ndev_cores);
+
+  //For a device/thread level parallelism further partitioning
+  //is needed, however for this case there are 2 possibilities:
+  // 1: There is a device/multi-cores and are less partitions than threads (split partitions between threads)
+  // 2: There is a device/multi-cores and are more partitions than threads (split walks between threads)
+  // 3: There is no device, so just use original MPI-partitions
+  nTotAccumulators=MPI_lSize;
+  std::vector<double> accumulator(nTotAccumulators);
   double zero(0.00);
 
-////////  #pragma omp shared() private(i)
   #pragma omp target
+  #pragma omp private(threadID, parentMPI_ID, rnd_seed, nAccums, AccumStart)
   {
-    int threadID = omp_get_thread_num();
-    int ParentAccumulator = FindAccumParentID<int>(threadID, ndev_cores, MPI_lSize);
+    for(int I=Istart; I<IEnd; I++){
 
-    //First find all points that fall
-    //inside the domain
+    }
+
+    threadID = omp_get_thread_num();
+    parentMPI_ID = FindAccumParentID<int>(threadID, nTotAccumulators, MPI_lSize);
+
+    //First find all initial points
+    //that fall inside the domain
     if(threadID < MPI_lSize){
-      int I = threadID + MPI_ITstart;
+      I = threadID + MPI_ITstart;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       InDomainFlag[threadID] = (insideDomain<double,int>(x0, bcDirch, bcNeum) ? 1:0);
@@ -89,28 +103,28 @@ int main(){
     //on the accumulators
     accumulator[threadID] = double(0.00);
     for(int IWalk=0; IWalk<nWalksPerThread; IWalk++){
-      int I = ParentAccumulator + MPI_ITstart;
-      int rnd_seed = 0;
+      I = parentMPI_ID + MPI_ITstart;
+      rnd_seed = 0;
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       double val = poissonWalk<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed);
-      accumulator[threadID] += (InDomainFlag[ParentAccumulator]==1)? val : zero;
+      accumulator[threadID] += (InDomainFlag[parentMPI_ID]==1)? val : zero;
     }
 
     //Aggregate all the accumulators on
-    //the solution vector
+    //the solution vector and average the
+    //solution
     #pragma omp barrier
     if(threadID < MPI_lSize){
-      int nAccums  = FindLocalNumberOfAccums<int>(threadID, ndev_cores, MPI_lSize);
-      int devStart = FindPartIDFirstLocalAccumPos<int>(threadID, ndev_cores, MPI_lSize);
+      nAccums    = FindLocalNumberOfAccums<int>(threadID, nTotAccumulators, MPI_lSize);
+      AccumStart = FindPartIDFirstLocalAccumPos<int>(threadID, nTotAccumulators, MPI_lSize);
       u_sol[threadID] = double(0.00);
-      for(int I=devStart; I<(devStart+nAccums); I++){
+      for(I=AccumStart; I<(AccumStart+nAccums); I++){
         u_sol[threadID] += accumulator[I];
       }
       u_sol[threadID] /= double(nWalks);
     }
   }
-
 
   // Printing some extra data to
   // console (to check for if

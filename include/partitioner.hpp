@@ -36,6 +36,20 @@ FORCE_INLINE UINT lastIterator(const UINT tiD, const UINT nPartitions, const UIN
   return ((rem!=0) ? ((tiD<rem)? tnend0 : tnend1) : tnend2) - 1;
 };
 
+//Complete a local/Global
+//partition of a distributed
+//vector
+template<typename UINT>
+FORCE_INLINE void partitionProblem(const UINT & tiD, const UINT & nPartitions, const UINT & TotSize
+                                 , UINT & IStart, UINT & IEnd, UINT & pSize)
+{
+  IStart = firstIterator<int>(tiD, nPartitions, TotSize);
+  IEnd   = lastIterator<int>( tiD, nPartitions, TotSize);
+  pSize  = IEnd - IStart;
+};
+
+
+
 /***************************\
 ! Forward and inverse 
 ! Iterators

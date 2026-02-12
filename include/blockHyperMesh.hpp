@@ -51,7 +51,7 @@ FORCE_INLINE void BHMeshPoint(REAL Point[dim], const UINT & Iter1D, const blockH
   for(UINT I=0; I<dim; I++){
     Point[I] =  BHMdata.offset[I];
     for(UINT J=0; J<dim; J++){
-      Point[I] += REAL(double(ItersND[I]) +0.50)*BHMdata.dx[I*dim + J];
+      Point[I] += REAL(double(ItersND[I]) + 0.50)*BHMdata.dx[I*dim + J];
     }
   }
 };
