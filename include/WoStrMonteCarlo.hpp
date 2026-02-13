@@ -25,47 +25,39 @@
 ! Date  : 31/01/2025
 !
 \**************************************/
-template<typename REAL>
-FORCE_INLINE REAL lines( Vec2D<REAL> x ) {
-   const REAL s = 8.0;
-   return std::fmod( std::floor(s*x[0]), 2.0 );
-}
-
-
-template<typename REAL, typename UINT, typename RNGData>
-FORCE_INLINE REAL WoStr(Vec2D<REAL> x0,                                  // evaluation point
-                        std::vector<Polyline2D<REAL>> boundaryDirichlet, // absorbing part of the boundary
-                        std::vector<Polyline2D<REAL>> boundaryNeumann,   // reflecting part of the boundary
-                        std::function<REAL(Vec2D<REAL>)> g,              // Dirichlet boundary values
-                        RNGData seedData)
+template<typename real, typename uint, typename RNGData, size_t nVars, size_t sdim>
+FORCE_INLINE VecND<real,nVars> WoStr(const Point<real,sdim>    & x0,       // evaluation point
+                                     const boundary<real,sdim> & Dirichlet,// absorbing part of the boundary
+                                     const boundary<real,sdim> & Neumann,  // reflecting part of the boundary
+                                     std::function<VecND<real,nVars>(Point<real,sdim>)> g, //Greens function
+                                     std::function<void(RNGData&)> rngUpdate,              // RN-update
+                                     std::function<real(const RNGData&)> rngNormalised,    // RN-normalise
+                                     RNGData & seedData)
 {
-   const REAL eps = 0.0001;     // stopping tolerance
-   const REAL rMin = 0.0001;    // minimum step size
-   const UINT maxSteps = 65536; // maximum walk length
+   const real eps = 0.0001;     // stopping tolerance
+   const real rMin = 0.0001;    // minimum step size
+   const uint maxSteps = 65536; // maximum walk length
 
-   uint32_t rqd_seed = 0UL + uint32_t(seedVal);
-   Vec2D<REAL> x = x0;        // start walk at the evaluation point
-   Vec2D<REAL> n={ 0.0, 0.0 };// assume x0 is an interior point, and has no normal
-   bool onBoundary = false;   // flag whether x is on the interior or boundary
+   Point<real,sdim> x = x0;      // start walk at the evaluation point
+   VecND<real,sdim> n=real(0.00);// assume x0 is an interior point, and has no normal
+   bool onBoundary = false;      // flag whether x is on the interior or boundary
 
-   REAL r, dDirichlet, dSilhouette; //radii used to define star shaped region
-   UINT steps = 0;
+   real r, dDirichlet, dSilhouette; //radii used to define star shaped region
+   uint steps = 0;
    for(steps=0; (dDirichlet > eps) && (steps < maxSteps); steps++){
      // loop until the walk hits the Dirichlet boundary
      // compute the radius of the largest star-shaped region
-     dDirichlet = distancePolylines<REAL,UINT>( x,boundaryDirichlet);
-     dSilhouette = silhouetteDistancePolylines<REAL,UINT>( x, boundaryNeumann );
+     dDirichlet = distancePolylines<real,uint>( x,boundaryDirichlet);
+     dSilhouette = silhouetteDistancePolylines<real,uint>( x, boundaryNeumann );
      r = std::max( rMin, std::min(dDirichlet,dSilhouette) );
 
      // intersect a ray with the star-shaped region boundary
-     REAL theta = random<double>( -M_PI, M_PI );
-//     rqd_seed = randqd_uint32(rqd_seed);
-//     REAL theta = my_random<double>( -M_PI, M_PI, rqd_seed);
+     rngUpdate(seedData);
+     real theta = RNG_reNormalise<real,RNGData>(rngNormalised, seedData, -M_PI, M_PI);
 
-     // sample from a hemisphere around the normal
-     if( onBoundary ) theta = theta/REAL(2.) + angleOf2DVec<REAL>(n);
-     Vec2D<REAL> v{ cos(theta), sin(theta) }; // unit ray direction
-     x = intersectPolylines<REAL,UINT>( x, v, r, boundaryNeumann, n, onBoundary );
+     if( onBoundary ) theta = theta/real(2.) + angleOf2DVec<real>(n); // sample from hemisphere around the normal
+     Vec2D<real> v{ cos(theta), sin(theta) }; // unit ray direction
+     x = intersectPolylines<real,uint>( x, v, r, boundaryNeumann, n, onBoundary );
      steps++;
    } //stop if we hit the Dirichlet boundary, or the walk is too long
    if( steps >= maxSteps ) printf("Hit max steps \n");

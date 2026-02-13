@@ -19,7 +19,7 @@ struct BoundedVolume
   uint myID, parentBV_id;
 
   //Owned entities
-  uint nOwnedEntities;  //If not a leaf (then give idea as to how many nodes)
+  uint nOwnedEntities;  //If not a leaf (then give idea as to how many entities owne)
   uint left_childBV_id, rightchildBV_id;
 
   //If a leaf give details about position of the entity

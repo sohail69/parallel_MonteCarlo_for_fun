@@ -39,6 +39,12 @@ void simple2DBoundary(std::vector<Polyline2D<REAL>> & bcDirch
   bcNeum.push_back({{  Vec2D<REAL>({0.2, 1.0}), Vec2D<REAL>({0.0, 0.6}), Vec2D<REAL>({0.2, 0.2}) }});
 };
 
+template<typename real>
+FORCE_INLINE real lines( Vec2D<real> x ) {
+   const real s = 8.0;
+   return std::fmod( std::floor(s*x[0]), 2.0 );
+}
+
 
 /**************************************\
 ! solves a Laplace equation Delta u = 0

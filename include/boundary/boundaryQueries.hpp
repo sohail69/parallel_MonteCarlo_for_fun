@@ -1,7 +1,7 @@
 #pragma once
 /**************************************\
-! Queries the closest point on the
-! boundary surface
+! Queries the the boundary for various
+! points of interest
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
@@ -15,6 +15,9 @@
 #include "../templatedGeometry/localVectorAlgebra.hpp"
 #include "../templatedGeometry/geometricPrimitives.hpp"
 
+// Find the nearest boundary point
+// intersection (direct boundary
+// intersection)
 template<typename real, typename uint, uint sDIM, uint eDIM>
 real findClosestDistance(const boundary<real,sDIM,eDIM> & DirchBC, const Point<real,sDIM> & p0)
 {
@@ -33,3 +36,9 @@ void findClosestSurfacePoint(const boundary<real,sDIM> & DirchBC
 
 
 }
+
+
+
+// Find the nearest boundary 
+// silhouette point to solve
+// the problem
