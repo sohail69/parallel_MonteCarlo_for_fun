@@ -39,22 +39,21 @@ FORCE_INLINE real RNG_reNormalise(std::function<REAL(const RNGData&)> rngNormali
 struct OG_randomData
 {
   const size_t rand_max = RAND_MAX;
-  size_t seedval=0;
+  size_t randomNumber=0;
 };
 
 //Original RNG update
 template<typename real>
 FORCE_INLINE void OG_randomUpdate(OG_randomData & rqd_seed){
   const real rRandMax = 1.0/real(rqd_seed.rand_max);
-  OG_randomData.seedval = rand();
+  OG_randomData.randomNumber = rand();
 }
-
 
 //Original RNG renormalisation/re-Range
 template<typename real>
 FORCE_INLINE real OG_randomNormalised(const OG_randomData & rqd_seed){
   const real rRandMax = 1.0/real(rqd_seed.rand_max);
-  return real(OG_randomData.seedval)*rRandMax;
+  return real(OG_randomData.randomNumber)*rRandMax;
 }
 
 /**************************************\
@@ -70,18 +69,58 @@ FORCE_INLINE real OG_randomNormalised(const OG_randomData & rqd_seed){
 struct LCG32_rngData
 {
   const size_t rand_max = (1L << 32);
-  uint32_t seedval=0UL;
+  uint32_t randomNumber=0UL;
 };
 
 template<typename real>
 FORCE_INLINE void LCG32_rngUpdate(LCG32_rngData & rqd_seed){
-  rqd_seed.seedval  = (uint32_t) (1664525UL * rqd_seed.seedval + 1013904223UL);
+  rqd_seed.randomNumber  = (uint32_t) (1664525UL * rqd_seed.randomNumber + 1013904223UL);
 };
-
 
 // returns a random value in the range [rMin,rMax]
 template<typename REAL>
 FORCE_INLINE REAL LCG32_rngNormalised(const LCG32_rngData & rqd_seed){
   const real rRandMax = 1.0/real(rqd_seed.rand_max);
-  return real(OG_randomData.seedval)*rRandMax;
+  return real(OG_randomData.randomNumber)*rRandMax;
 };
+
+/**************************************\
+!
+! Generate random number
+! using  xor-shift256++
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+!
+\**************************************/
+struct XORSHIFT256_rngData
+{
+  const size_t rand_max = (1L << 64);
+  uint64_t s[4];
+  uint64_t randomNumber=0UL;
+};
+
+FORCE_INLINE uint64_t XORSHIFT256_rol64(const uint64_t & x, const int & k){
+  return (x << k) | (x >> (64 - k));
+};
+
+template<typename real>
+FORCE_INLINE void XORSHIFT256_rngUpdate(LCG32_rngData & rqd_seed){
+  rqd_seed.randomNumber = XORSHIFT256_rol64(rqd_seed.s[0] + rqd_seed.s[3],23) + rqd_seed.s[0];
+  uint64_t t = rqd_seed.s[1] << 17;
+  rqd_seed.s[2] ^= rqd_seed.s[0];
+  rqd_seed.s[3] ^= rqd_seed.s[1];
+  rqd_seed.s[1] ^= rqd_seed.s[2];
+  rqd_seed.s[0] ^= rqd_seed.s[3];
+
+  rqd_seed.s[2] ^= t;
+  rqd_seed.s[3] ^= XORSHIFT256_rol64(rqd_seed.s[3], 45);
+};
+
+// returns a random value in the range [rMin,rMax]
+template<typename REAL>
+FORCE_INLINE REAL XORSHIFT256_rngNormalised(const LCG32_rngData & rqd_seed){
+  const real rRandMax = 1.0/real(rqd_seed.rand_max);
+  return real(OG_randomData.randomNumber)*rRandMax;
+};
+

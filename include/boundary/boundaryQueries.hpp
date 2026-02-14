@@ -14,6 +14,7 @@
 \**************************************/
 #include "../templatedGeometry/localVectorAlgebra.hpp"
 #include "../templatedGeometry/geometricPrimitives.hpp"
+#include "boundary/IntersectionDetection2D.hpp"
 
 // Find the nearest boundary point
 // intersection (direct boundary

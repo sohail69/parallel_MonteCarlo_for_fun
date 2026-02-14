@@ -7,8 +7,7 @@
 #include "blockHyperMesh.hpp"
 #include "Random/RNG.hpp"
 #include "boundary/localVectorAlgebra.hpp"
-#include "boundary/IntersectionDetection2D.hpp"
-
+#include "boundary/boundaryQueries.hpp"
 
 
 /**************************************\
@@ -25,14 +24,14 @@
 ! Date  : 31/01/2025
 !
 \**************************************/
-template<typename real, typename uint, typename RNGData, size_t nVars, size_t sdim>
-FORCE_INLINE VecND<real,nVars> WoStr(const Point<real,sdim>    & x0,       // evaluation point
-                                     const boundary<real,sdim> & Dirichlet,// absorbing part of the boundary
-                                     const boundary<real,sdim> & Neumann,  // reflecting part of the boundary
-                                     std::function<VecND<real,nVars>(Point<real,sdim>)> g, //Greens function
+template<typename real, typename uint, typename RNGData, size_t nVars, size_t sdim, size_t edim>
+FORCE_INLINE VecND<real,nVars> WoStr(const Point<real,sdim>    & x0,            // evaluation point
+                                     const boundary<real,sdim,edim> & Dirichlet,// absorbing part of the boundary
+                                     const boundary<real,sdim,edim> & Neumann,  // reflecting part of the boundary
+                                     std::function<VecND<real,nVars>(Point<real,sdim>)> g, // Greens function
                                      std::function<void(RNGData&)> rngUpdate,              // RN-update
                                      std::function<real(const RNGData&)> rngNormalised,    // RN-normalise
-                                     RNGData & seedData)
+                                     RNGData & seedData)                                   // RN-data
 {
    const real eps = 0.0001;     // stopping tolerance
    const real rMin = 0.0001;    // minimum step size
@@ -56,7 +55,11 @@ FORCE_INLINE VecND<real,nVars> WoStr(const Point<real,sdim>    & x0,       // ev
      real theta = RNG_reNormalise<real,RNGData>(rngNormalised, seedData, -M_PI, M_PI);
 
      if( onBoundary ) theta = theta/real(2.) + angleOf2DVec<real>(n); // sample from hemisphere around the normal
-     Vec2D<real> v{ cos(theta), sin(theta) }; // unit ray direction
+
+     VecND<real,sdim-1> angles
+//     Vec2D<real> v{ cos(theta), sin(theta) };
+
+     VecND<real,sdim> v = getUnitVectorFromAngles(VecND<real,sdim-1> angles);
      x = intersectPolylines<real,uint>( x, v, r, boundaryNeumann, n, onBoundary );
      steps++;
    } //stop if we hit the Dirichlet boundary, or the walk is too long
