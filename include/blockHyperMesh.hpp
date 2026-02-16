@@ -4,23 +4,23 @@
 //Miminimum data needed
 //to generate and oriented
 //block hyper mesh.
-template<typename REAL, typename UINT, UINT dim>
+template<typename real, typename uint, uint dim>
 struct PACKSTRUCT blockHyperMeshData{
-   UINT sizes[dim];
-   REAL offset[dim], dx[dim*dim];
+   uint sizes[dim];
+   real offset[dim], dx[dim*dim];
 };
 
 //The hyper-block mesh
 //forward iterator
-template<typename REAL, typename UINT, UINT dim>
-FORCE_INLINE UINT BHMeshFwdIter(const UINT Iters[dim], const blockHyperMeshData<REAL,UINT,dim> & BHMdata){
-  UINT Pos(0);
+template<typename real, typename uint, uint dim>
+FORCE_INLINE uint BHMeshFwdIter(const uint Iters[dim], const blockHyperMeshData<real,uint,dim> & BHMdata){
+  uint Pos(0);
   #pragma unroll
-  for(UINT I=0; I<dim; I++){
-    UINT pos_b=Iters[I];
+  for(uint I=0; I<dim; I++){
+    uint pos_b=Iters[I];
     #pragma unroll
-    for(UINT J=I+1; J<dim; J++){
-      UINT K=dim-J-1;
+    for(uint J=I+1; J<dim; J++){
+      uint K=dim-J-1;
       pos_b *= BHMdata.sizes[K];
     }
     Pos += pos_b;
@@ -30,11 +30,11 @@ FORCE_INLINE UINT BHMeshFwdIter(const UINT Iters[dim], const blockHyperMeshData<
 
 //The hyper-block mesh
 //Inverse iterator
-template<typename REAL, typename UINT, UINT dim>
-FORCE_INLINE void BHMeshInvIter(UINT ItersND[dim], const UINT & Iter1D, const blockHyperMeshData<REAL,UINT,dim> & BHMdata){
-  UINT a = Iter1D;
-  for(UINT I=0; I<dim; I++){
-    UINT temp = UINT(a/BHMdata.sizes[dim-I-1]);
+template<typename real, typename uint, uint dim>
+FORCE_INLINE void BHMeshInvIter(uint ItersND[dim], const uint & Iter1D, const blockHyperMeshData<real,uint,dim> & BHMdata){
+  uint a = Iter1D;
+  for(uint I=0; I<dim; I++){
+    uint temp = uint(a/BHMdata.sizes[dim-I-1]);
     ItersND[I] = a - temp*BHMdata.sizes[dim-I-1];
     a = temp;
   }
@@ -44,14 +44,14 @@ FORCE_INLINE void BHMeshInvIter(UINT ItersND[dim], const UINT & Iter1D, const bl
 //Gives a physical point
 //from a hyper-block mesh
 //iterator
-template<typename REAL, typename UINT, UINT dim>
-FORCE_INLINE void BHMeshPoint(REAL Point[dim], const UINT & Iter1D, const blockHyperMeshData<REAL,UINT,dim> & BHMdata){
-  UINT ItersND[dim];
+template<typename real, typename uint, uint dim>
+FORCE_INLINE void BHMeshPoint(real Point[dim], const uint & Iter1D, const blockHyperMeshData<real,uint,dim> & BHMdata){
+  uint ItersND[dim];
   BHMeshInvIter(ItersND, Iter1D, BHMdata);
-  for(UINT I=0; I<dim; I++){
+  for(uint I=0; I<dim; I++){
     Point[I] =  BHMdata.offset[I];
-    for(UINT J=0; J<dim; J++){
-      Point[I] += REAL(double(ItersND[I]) + 0.50)*BHMdata.dx[I*dim + J];
+    for(uint J=0; J<dim; J++){
+      Point[I] += real(double(ItersND[I]) + 0.50)*BHMdata.dx[I*dim + J];
     }
   }
 };

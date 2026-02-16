@@ -6,7 +6,7 @@ project(pFEM
         DESCRIPTION "A Hierachical structured grid Monte-Carlo sampling framework"
         LANGUAGES C CXX)
 
-add_executable(monteCarlo mainMonteCarlo.cpp)
+add_executable(monteCarlo mainMonteCarloTest.cpp)
 
 # Import MPI and OpenMP
 find_package(OpenMP REQUIRED)

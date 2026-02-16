@@ -13,8 +13,8 @@ class MPIComm{
     MPIComm(bool IS_MPI_ON);
 
     //Get MPI process data
-    FORCE_INLINE int & getProcID(){ return procID;};
-    FORCE_INLINE int & getNProcs(){ return nProcs;};
+    FORCE_INLINE int &getProcID() { return procID;};
+    FORCE_INLINE int &getNProcs() { return nProcs;};
 };
 
 //The constructor

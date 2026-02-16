@@ -28,6 +28,30 @@
 ! std::function<VecND<real,nVars>(Point<real,sdim>)> g, // Greens function
 \**************************************/
 template<typename real, typename RNGData, size_t sdim, size_t edim>
+class WoStr_solver
+{
+  private:
+    const int nWalks = 65536;              //Total number of Monte Carlo samples
+    const int nWalksPerThread = 65536/542; //Number of Monte Carlo samples per thread
+    const int s = 128;                     //Image length-width
+    const int nSize = s*s;                 //Total image size
+    const double dx= 1.0/double(s);        //Image increment
+
+
+
+  public:
+    //The constructor
+    WoStr_solver(, std::function<void(RNGData&)> rngUpdate);
+
+
+    //Run walks
+
+};
+
+
+
+
+template<typename real, typename RNGData, size_t sdim, size_t edim>
 FORCE_INLINE Point<real,sdim> WoStr_point(const Point<real,sdim>    & x0           // evaluation point
                                         , const boundary<real,sdim,edim> & DirchBC // absorbing boundary
                                         , const boundary<real,sdim,edim> & NeumBC  // reflecting boundary

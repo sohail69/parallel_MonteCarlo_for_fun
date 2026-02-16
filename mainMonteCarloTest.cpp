@@ -23,8 +23,8 @@
 
 //Geometry libs
 #include "include/blockHyperMesh.hpp"
-#include "include/boundary/localVectorAlgebra.hpp"
-#include "include/boundary/IntersectionDetection2D.hpp"
+//#include "include/boundary/localVectorAlgebra.hpp"
+//#include "include/boundary/IntersectionDetection2D.hpp"
 #include "problemOperators/poissonGreenFunctionOperator2D.hpp"
 
 //
@@ -48,8 +48,8 @@ int main(){
   MPIComm mpiComm(IS_MPI_ON);
 
   //Problem base size
+  const int ndev_cores=1000;
   const int nWalks = 65536;              //Total number of Monte Carlo samples
-  const int nWalksPerThread = 65536/542; //Number of Monte Carlo samples per thread
   const int s = 128;                     //Image length-width
   const int nSize = s*s;                 //Total image size
   const double dx= 1.0/double(s);        //Image increment
@@ -57,18 +57,16 @@ int main(){
   //Generate the blockMesh from
   //the base size (2D-Quad) and
   //a 2D polyline boundary
-  blockHyperMeshData<double,int,2> BHMeshData;
-  std::vector<Polyline2D<double>>  bcDirch, bcNeum;
+  blockHyperMeshData<double,int,sdim> BHMeshData;
   simpleBlockMeshBuild<double,int,2>(dx, s, BHMeshData);
-  simple2DBoundary<double>(bcDirch,  bcNeum);
+//  std::vector<Polyline2D<double>>  bcDirch, bcNeum;
+//  simple2DBoundary<double>(bcDirch,  bcNeum);
 
-  //Partitioning the data on multiple
-  //levels
-  int MPI_lSize, MPI_ITstart, MPI_ITend;
-  int ndev_cores=1000;
 
   //MPI global partitioning (Geometric paritioning of the domain)
-  partitionProblem<int>(mpiComm.getProcID(),mpiComm.getNProcs(),nSize,MPI_ITstart,MPI_ITend,MPI_lSize);
+  WoStr_Partition<int> wostr_part;
+  partitionProblem<double,int,2>(mpiComm, BHMeshData, nWalks, wostr_part);
+
 
   //Iterators and other thread local
   //variables
@@ -77,15 +75,13 @@ int main(){
 
   //Generate a vector for storing
   //the local solution data
+
+/*
   std::vector<int>    InDomainFlag(MPI_lSize);
   std::vector<double> u_sol(MPI_lSize);
 
 
-  //For a device/thread level parallelism further partitioning
-  //is needed, however for this case there are 2 possibilities:
-  // 1: There is a device/multi-cores and are less partitions than threads (split partitions between threads)
-  // 2: There is a device/multi-cores and are more partitions than threads (split walks between threads)
-  // 3: There is no device, so just use original MPI-partitions
+
   nTotAccumulators=MPI_lSize;
   std::vector<double> accumulator(nTotAccumulators);
   double zero(0.00);
@@ -119,17 +115,17 @@ int main(){
       Vec2D<double> x0;
       BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
       double val = poissonWalk<double,int>(x0, bcDirch, bcNeum, lines<double>, rnd_seed);
-
+*/
 /******************************************************\
 !  Sample usage region
 \******************************************************/
-Point<double, sdim> x0;
 
-Point<real,sdim> x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
-                                   (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
+//Point<double, sdim> x0;
+//Point<real,sdim> x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
+//                                   (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
 /******************************************************\
 \******************************************************/
-
+/*
       accumulator[threadID] += (InDomainFlag[parentMPI_ID]==1)? val : zero;
     }
 
@@ -147,16 +143,17 @@ Point<real,sdim> x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
       u_sol[threadID] /= double(nWalks);
     }
   }
-
+*/
   // Printing some extra data to
   // console (to check for if
   // program launched correctly)
   if(mpiComm.getProcID() == 0) std::cout << "Iterators" << std::endl;
-  std::cout << std::setw(10) << mpiComm.getProcID()
-            << std::setw(10) << mpiComm.getNProcs() 
-            << std::setw(10) << MPI_lSize
-            << std::setw(10) << MPI_ITstart
-            << std::setw(10) << MPI_ITend   << std::endl;
+  std::cout << std::setw(10) << wostr_part.procID
+            << std::setw(10) << wostr_part.nProcs
+            << std::setw(10) << wostr_part.mpi_Istart
+            << std::setw(10) << wostr_part.mpi_Iend
+            << std::setw(10) << wostr_part.mpi_lsize  << std::endl;
+
 
 
   // Output the data into
@@ -165,9 +162,9 @@ Point<real,sdim> x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
 
 
   //clean-up
-  InDomainFlag.clear();
-  accumulator.clear();
-  u_sol.clear();
+  //InDomainFlag.clear();
+  //accumulator.clear();
+  //u_sol.clear();
   MPI_Finalize();
   return 0;
 }
