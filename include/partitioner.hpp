@@ -72,7 +72,7 @@ template<typename uint>
 FORCE_INLINE uint GCD_pairAlg(const uint &A, const uint &B){
   uint a=A, b=B, t;
   if( (a>0) && (b>0) ){
-    for(;B != 0;){
+    while(b != 0){
       t = b;
       b = a%b;
       a = t;

@@ -43,17 +43,14 @@ int main(){
   static const size_t sdim=2;  //The spatial dimension
   static const size_t edim=1;  //The boundary entities dimension
 
-
   // The MPI communicator
   bool IS_MPI_ON=false;
   MPIComm mpiComm(IS_MPI_ON);
-
 
   // Problem base size
   const int nWalks = 65536;              //Total number of Monte Carlo samples
   const int s = 128;                     //Image length-width
   const double dx= 1.0/double(s);        //Image increment
-
 
   /*****************************************\
   ! Read in any boundary data build the
@@ -66,7 +63,6 @@ int main(){
   simpleBlockMeshBuild<double,int,sdim>(dx, s, BHMeshData);
   std::vector<boundary<double,sdim,edim>> boundaries;
 
-
   // Setup the boundaries
   boundary<double,sdim,edim> bcDirch, bcNeum;
   boundaries.push_back(bcDirch);
@@ -74,29 +70,23 @@ int main(){
 //  std::vector<Polyline2D<double>>  bcDirch, bcNeum;
 //  simple2DBoundary<double>(bcDirch,  bcNeum);
 
-
   // MPI global partitioning (Geometric paritioning of the domain)
   WoStr_Partition<int> wostr_part;
   partitionProblem<double,int,2>(mpiComm, BHMeshData, nWalks, wostr_part);
-
 
   // Generate a vector for storing
   // the local solution data
   std::vector<int>    InDomainFlag(wostr_part.mpi_lsize);
   std::vector<double> u_sol(wostr_part.mpi_lsize);
-  std::vector<double> accumulator(wostr_part.mpi_lsize * wostr_part.nAccumsPerPart);
-
+  std::vector<double> accumulator(wostr_part.nAccumsPerMPI);
 
   // First find all initial points
   // that fall inside the domain
-  unsigned nLActiveAccums=0;
   for(unsigned iPos=0; iPos< wostr_part.mpi_lsize; iPos++){
     Point<double,sdim> x0;
     BHMeshPoint<double,int,sdim>(x0.data(), iPos + wostr_part.mpi_Istart, BHMeshData);
     InDomainFlag[iPos] = insideDomain<double,sdim,edim>(x0,boundaries) ? 1:0;
-    nLActiveAccums += InDomainFlag[iPos];
   }
-
 
   /*****************************************\
   ! Run the Monte-Carlo random walks for
@@ -135,20 +125,21 @@ int main(){
     }
   }*/
 
-
   /*****************************************\
   ! Aggregate the solution partial
   ! accumulators on to the solution vector
   \*****************************************/
   // First find all initial points
   // that fall inside the domain
+
+/*
   for(unsigned iPos=0; iPos< wostr_part.mpi_lsize; iPos++){
     unsigned nAccums  = wostr_part.nAccumsPerPart;
     unsigned AccStart = iPos * wostr_part.nAccumsPerPart;
     u_sol[iPos] = double(0.00);
     for(unsigned iAccum=AccStart; iAccum<(AccStart+nAccums); iAccum++) u_sol[iPos] += accumulator[iAccum];
     u_sol[iPos] /= double(nWalks);
-  }
+  }*/
 
 
   /*****************************************\
@@ -160,6 +151,7 @@ int main(){
   if(mpiComm.getProcID() == 0) std::cout << "Iterators" << std::endl;
   std::cout << std::setw(10) << wostr_part.procID
             << std::setw(10) << wostr_part.nProcs
+            << std::setw(10) << wostr_part.nAccumsPerMPI
             << std::setw(10) << wostr_part.mpi_Istart
             << std::setw(10) << wostr_part.mpi_Iend
             << std::setw(10) << wostr_part.mpi_lsize  << std::endl;
@@ -170,7 +162,7 @@ int main(){
 
 
   //clean-up
-  //accumulator.clear();
+  accumulator.clear();
   u_sol.clear();
   InDomainFlag.clear();
   MPI_Finalize();
