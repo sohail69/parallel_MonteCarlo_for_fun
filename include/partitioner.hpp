@@ -1,5 +1,4 @@
-#ifndef PARTITIONER_HPP
-#define PARTITIONER_HPP
+#pragma once
 #include "globalMacros.hpp"
 #include "blockHyperMesh.hpp"
 
@@ -12,7 +11,7 @@ template<typename uint>
 struct PACKSTRUCT WoStr_Partition
 {
   // The problem total size
-  uint total_samplePoints, nWalks;
+  uint total_samplePoints, nWalks0;
 
   // MPI Partitioning strictly
   // partitions sample points
@@ -20,10 +19,17 @@ struct PACKSTRUCT WoStr_Partition
   uint mpi_Istart, mpi_Iend, mpi_lsize;
 
   // Device\thread Partitioning
-  uint nDevices, nThreadsPDev;
-  uint t_start, t_end, t_size;
-};
+  uint nThreadsPerMPI=1;
 
+  // Accumulator sizing
+  uint ThreadPart_GCD=1;
+  uint nAccumsPerMPI=0, nAccumsPerPart=1;
+  uint nAccumsPerThread=1;
+
+  // Random walk samples
+  // partitioned
+  uint nWalksPerAccum=0, nWalks=0;
+};
 
 /***************************\
 ! Linear partitioning
@@ -59,6 +65,21 @@ FORCE_INLINE uint lastIterator(const uint tiD, const uint nPartitions, const uin
   return ((rem!=0) ? ((tiD<rem)? tnend0 : tnend1) : tnend2) - 1;
 };
 
+
+//Finds the greatest common
+//divisor for a pair of numbers
+template<typename uint>
+FORCE_INLINE uint GCD_pairAlg(const uint &A, const uint &B){
+  uint a=A, b=B, t;
+  if( (a>0) && (b>0) ){
+    for(;B != 0;){
+      t = b;
+      b = a%b;
+      a = t;
+    }
+  }
+  return a;
+};
 
 /***************************\
 ! Forward and inverse 
@@ -126,7 +147,10 @@ FORCE_INLINE uint FindAccumParentID(const uint &threadID, const uint &nDevThread
 //accumulator belonging to a given
 //parentID partition
 template<typename uint>
-FORCE_INLINE uint FindPartIDFirstLocalAccumPos(const uint &PartID, const uint &nDevThreads, const uint &nLocalParts){
+FORCE_INLINE uint FindPartIDFirstLocalAccumPos(const uint &PartID
+                                             , const uint &nDevThreads
+                                             , const uint &nLocalParts)
+{
   uint remThreads = nDevThreads%nLocalParts;
   uint minThreads = nDevThreads/nLocalParts;
   uint maxThreads = (remThreads == 0) ? minThreads : (minThreads+1);
@@ -148,17 +172,17 @@ FORCE_INLINE uint FindPartIDFirstLocalAccumPos(const uint &PartID, const uint &n
 // 1: There is a device/multi-cores and are less partitions than threads (split partitions between threads)
 // 2: There is a device/multi-cores and are more partitions than threads (split walks between threads)
 // 3: There is no device, so just use original MPI-partitions
-template<typename real, typename uint, uint sdim>
+template<typename real, typename uint, size_t sdim>
 FORCE_INLINE void partitionProblem(MPIComm & comm
                                  , const blockHyperMeshData<real,uint,sdim> & BHMeshData
                                  , const uint & nWalks
                                  , WoStr_Partition<uint> & part)
 {
-  //Get the total problem
-  //sample point size from
-  //mesh
+  //Get the total problem sample
+  //point size from mesh
   part.total_samplePoints=1;
   for(uint i=0; i<sdim; i++) part.total_samplePoints *= BHMeshData.sizes[i];
+  part.nWalks0 = nWalks;
 
   //Get the MPI process data
   //and from the communicator
@@ -169,20 +193,19 @@ FORCE_INLINE void partitionProblem(MPIComm & comm
   //using the MPI-partitioner
   part.mpi_Istart = firstIterator<uint>(part.procID, part.nProcs, part.total_samplePoints);
   part.mpi_Iend   = lastIterator<uint>( part.procID, part.nProcs, part.total_samplePoints);
-  part.mpi_lsize  = part.mpi_Iend - part.mpi_Istart;
+  part.mpi_lsize  = part.mpi_Iend - part.mpi_Istart + 1;
 
+  //Partition the full local problem
+  //among the threads\devices this is
+  //for both the geometry and the walks
+  part.ThreadPart_GCD   = GCD_pairAlg( part.mpi_lsize, part.nThreadsPerMPI);
+  part.nAccumsPerMPI    = part.mpi_lsize * (part.nThreadsPerMPI/part.ThreadPart_GCD);
+  part.nAccumsPerPart   = (part.nThreadsPerMPI/part.ThreadPart_GCD);
+  part.nAccumsPerThread = (part.mpi_lsize/part.ThreadPart_GCD);
 
-
-}
-
-
-
-
-#endif
-
-
-
-
-
-
-
+  //Partition the walks among the
+  //accumulators and aim for approximately
+  //the initial number of walks
+  part.nWalksPerAccum = part.nWalks0/part.nAccumsPerPart; 
+  part.nWalks = part.nWalksPerAccum * part.nAccumsPerPart;
+};

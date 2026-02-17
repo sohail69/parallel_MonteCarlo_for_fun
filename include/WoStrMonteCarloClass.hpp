@@ -23,29 +23,24 @@
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
 !
-! dDirichlet = distancePolylines<real,unsigned>( x,boundaryDirichlet);
-! dSilhouette = silhouetteDistancePolylines<real,unsigned>( x, boundaryNeumann );
-! std::function<VecND<real,nVars>(Point<real,sdim>)> g, // Greens function
 \**************************************/
 template<typename real, typename RNGData, size_t sdim, size_t edim>
 class WoStr_solver
 {
   private:
+    std::vector<boundary<real,sdim,edim> > boundaryMap;
+
     const int nWalks = 65536;              //Total number of Monte Carlo samples
     const int nWalksPerThread = 65536/542; //Number of Monte Carlo samples per thread
     const int s = 128;                     //Image length-width
     const int nSize = s*s;                 //Total image size
     const double dx= 1.0/double(s);        //Image increment
 
-
-
   public:
     //The constructor
     WoStr_solver(, std::function<void(RNGData&)> rngUpdate);
 
-
     //Run walks
-
 };
 
 
@@ -58,8 +53,8 @@ FORCE_INLINE Point<real,sdim> WoStr_point(const Point<real,sdim>    & x0        
                                         , std::function<void(RNGData&)> rngUpdate  // RN-update
                                         , RNGData & seedData)                      // RN-data
 {
-   const real eps = 0.0001;     // stopping tolerance
-   const real rMin = 0.0001;    // minimum step size
+   const real eps = 0.0001;         // stopping tolerance
+   const real rMin = 0.0001;        // minimum step size
    const unsigned maxSteps = 65536; // maximum walk length
 
    Point<real,sdim> x = x0;      // start walk at the evaluation point

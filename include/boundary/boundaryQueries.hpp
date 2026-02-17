@@ -13,7 +13,25 @@
 \**************************************/
 #include "../templatedGeometry/localVectorAlgebra.hpp"
 #include "../templatedGeometry/geometricPrimitives.hpp"
-#include "boundary/IntersectionDetection2D.hpp"
+
+/**************************************\
+!
+! Queries if a point is inside the
+! domain
+!
+\**************************************/
+// Returns true is if a point x is interior
+// to a set of boundaries on a closed geometry
+// false if it falls outside
+template<typename real, size_t sdim, size_t edim>
+FORCE_INLINE bool insideDomain(const Point<real,sdim> & x
+                             , const std::vector<boundary<real,sdim,edim>> & boundaries)
+{
+//   REAL Theta = signedAngle<REAL,UINT>(x, boundaryDirichlet) + signedAngle<REAL,UINT>(x, boundaryNeumann);
+   real Theta = 0.001;
+   const real delta = 1e-4; // numerical tolerance
+   return (std::abs(Theta-2.*M_PI) < delta); // boundary winds around x exactly once
+}
 
 
 /**************************************\
@@ -26,9 +44,9 @@
 // intersection (direct boundary
 // intersection)
 template<typename real, size_t sdim, size_t edim>
-real findClosestDistance(const boundary<real,sDIM,eDIM> & DirchBC, const Point<real,sDIM> & p0)
+real findClosestDistance(const boundary<real,sdim,edim> & DirchBC, const Point<real,sdim> & p0)
 {
-  Point<real,sDIM> sfp;
+  Point<real,sdim> sfp;
   findClosestSurfacePoint(DirchBC, p0, sfp);
   return pointEuclideanDistance(p0, sfp);
 }
@@ -37,9 +55,9 @@ real findClosestDistance(const boundary<real,sDIM,eDIM> & DirchBC, const Point<r
 // is closest to the given
 // point
 template<typename real, size_t sdim, size_t edim>
-void findClosestSurfacePoint(const boundary<real,sDIM,edim> & DirchBC
-                           , const Point<real,sDIM>    & p0
-                           , Point<real,sDIM>          & sfp)
+void findClosestSurfacePoint(const boundary<real,sdim,edim> & DirchBC
+                           , const Point<real,sdim>         & p0
+                           , Point<real,sdim>               & sfp)
 {
 
 
@@ -55,10 +73,10 @@ void findClosestSurfacePoint(const boundary<real,sDIM,edim> & DirchBC
 // silhouette point to solve
 // the problem
 template<typename real, size_t sdim, size_t edim>
-real findSilhouettePointDistance(const boundary<real,sDIM,eDIM> & NeumBC, const Point<real,sDIM> & p0)
+real findSilhouettePointDistance(const boundary<real,sdim,edim> & NeumBC, const Point<real,sdim> & p0)
 {
-  Point<real,sDIM> sfp;
-  findClosestSilhouettePoint(DirchBC, p0, sfp);
+  Point<real,sdim> sfp;
+  findClosestSilhouettePoint(NeumBC, p0, sfp);
   return pointEuclideanDistance(p0, sfp);
 };
 
@@ -66,9 +84,9 @@ real findSilhouettePointDistance(const boundary<real,sDIM,eDIM> & NeumBC, const 
 // is closest to the given
 // point
 template<typename real, size_t sdim, size_t edim>
-void findClosestSilhouettePoint(const boundary<real,sDIM,edim> & NeumBC
-                              , const Point<real,sDIM>    & p0
-                              , Point<real,sDIM>          & sfp)
+void findClosestSilhouettePoint(const boundary<real,sdim,edim> & NeumBC
+                              , const Point<real,sdim>         & p0
+                              , Point<real,sdim>               & sfp)
 {
 
 
@@ -83,10 +101,10 @@ void findClosestSilhouettePoint(const boundary<real,sDIM,edim> & NeumBC
 // silhouette point to solve
 // the problem
 template<typename real, size_t sdim, size_t edim>
-real findClosestRayIntersectionPointDistance(const boundary<real,sDIM,eDIM> & NeumBC, const Point<real,sDIM> & p0)
+real findClosestRayIntersectionPointDistance(const boundary<real,sdim,edim> & NeumBC, const Point<real,sdim> & p0)
 {
-  Point<real,sDIM> sfp;
-  findClosestSilhouettePoint(DirchBC, p0, sfp);
+  Point<real,sdim> sfp;
+  findClosestSilhouettePoint(NeumBC, p0, sfp);
   return pointEuclideanDistance(p0, sfp);
 };
 
@@ -94,9 +112,9 @@ real findClosestRayIntersectionPointDistance(const boundary<real,sDIM,eDIM> & Ne
 // is closest to the given
 // point
 template<typename real, size_t sdim, size_t edim>
-void findClosestRayIntersectionPoint(const boundary<real,sDIM,edim> & NeumBC
-                                    , const Point<real,sDIM>    & p0
-                                    , Point<real,sDIM>          & sfp)
+void findClosestRayIntersectionPoint(const boundary<real,sdim,edim> & NeumBC
+                                    , const Point<real,sdim>    & p0
+                                    , Point<real,sdim>          & sfp)
 {
 
 
@@ -113,6 +131,7 @@ void findClosestRayIntersectionPoint(const boundary<real,sDIM,edim> & NeumBC
 // Checks for the intersection
 // of the the point on the
 // closest line
+/*
 template<typename REAL, typename UINT>
 FORCE_INLINE Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL r,
                          const std::vector<Polyline2D<REAL>>& P,
@@ -133,5 +152,5 @@ FORCE_INLINE Vec2D<REAL> intersectPolylines( Vec2D<REAL> x, Vec2D<REAL> v, REAL 
       }
    }
    return x + tMin*v; // first hit location
-}
+}*/
 

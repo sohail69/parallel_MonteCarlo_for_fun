@@ -25,3 +25,5 @@ VecND<real,sdim> getUnitVectorFromAngles(VecND<real,sdim-1> angles)
                                      , std::cos(angles[0]) });
   return VecND<real,sdim>(); //Default values
 };
+
+
