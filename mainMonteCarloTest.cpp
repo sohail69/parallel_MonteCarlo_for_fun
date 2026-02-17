@@ -102,11 +102,12 @@ int main(){
     //Sample the Monte-Carlo problem
     //and aggregate on the accumulators
     for(unsigned iAccum=0; iAccum<(wostr_part.nAccumsPerThread); iAccum++){
+      unsigned jAccum = threadID*(wostr_part.nAccumsPerThread) + iAccum;
+      unsigned iPos = (jAccum/);
+      Point<double, sdim> x0, x;
+      BHMeshPoint<double,int,2>(x0.data(), iPos + wostr_part.mpi_Istart, BHMeshData);
       for(unsigned iWalks=0; iWalks<; iWalks++){
-        unsigned jAccum = threadID*(wostr_part.nAccumsPerThread) + iAccum;
-        unsigned iPart = 
-        Point<double, sdim> x0, x;
-        BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
+
         accumulator[jAccum] += g(x);
       }
     }
