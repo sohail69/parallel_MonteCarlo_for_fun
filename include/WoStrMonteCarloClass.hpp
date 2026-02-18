@@ -50,7 +50,7 @@ template<typename real, typename RNGData, size_t sdim, size_t edim>
 FORCE_INLINE Point<real,sdim> WoStr_point(const Point<real,sdim>    & x0           // evaluation point
                                         , const boundary<real,sdim,edim> & DirchBC // absorbing boundary
                                         , const boundary<real,sdim,edim> & NeumBC  // reflecting boundary
-                                        , std::function<void(RNGData&)> rngUpdate  // RN-update
+                                        , std::function<void(RNGData&)>   rngUpdate// RN-update
                                         , RNGData & seedData)                      // RN-data
 {
    const real eps = 0.0001;         // stopping tolerance
