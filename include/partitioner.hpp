@@ -1,4 +1,5 @@
 #pragma once
+#include "MPIcomm.hpp"
 #include "globalMacros.hpp"
 #include "blockHyperMesh.hpp"
 
@@ -44,7 +45,7 @@ struct PACKSTRUCT WoStr_Partition
 //Starting iterator
 template<typename uint>
 FORCE_INLINE uint firstIterator(const uint tiD, const uint nPartitions, const uint nsize){
-  uint rem  =  nsize%nPartitions;
+  uint rem  = nsize%nPartitions;
   uint Nmin = nsize/nPartitions;
   uint tstart0 = tiD*(Nmin+1);
   uint tstart1 = tiD*Nmin + rem;
@@ -55,7 +56,7 @@ FORCE_INLINE uint firstIterator(const uint tiD, const uint nPartitions, const ui
 //Last iterator
 template<typename uint>
 FORCE_INLINE uint lastIterator(const uint tiD, const uint nPartitions, const uint nsize){
-  uint rem  =  nsize%nPartitions;
+  uint rem  = nsize%nPartitions;
   uint Nmin = nsize/nPartitions;
   uint tnend0 = (tiD+1)*(Nmin+1);
   uint tnend1 = (tiD+1)*Nmin+ rem;
