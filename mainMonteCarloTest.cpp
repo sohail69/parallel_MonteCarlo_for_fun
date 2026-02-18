@@ -90,7 +90,8 @@ int main(){
 
   /*****************************************\
   ! Run the Monte-Carlo random walks for
-  ! running the PDE problem
+  ! the PDE problem, add contribution on
+  ! the accumulators
   \*****************************************/
   double zero(0.00);
   int threadID=0;
@@ -104,10 +105,10 @@ int main(){
     //Sample the Monte-Carlo problem
     //and aggregate on the accumulators
     threadID = omp_get_thread_num();
+    Point<double, sdim> x0, x;
     for(unsigned iAccum=0; iAccum<(wostr_part.nAccumsPerThread); iAccum++){
       unsigned jAccum = threadID*(wostr_part.nAccumsPerThread) + iAccum;
       unsigned iPos = (jAccum/wostr_part.nAccumsPerPart);
-      Point<double, sdim> x0, x;
       BHMeshPoint<double,int,2>(x0.data(), iPos + wostr_part.mpi_Istart, BHMeshData);
       for(unsigned iWalks=0; iWalks<wostr_part.nWalksPerAccum; iWalks++){
         //x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
