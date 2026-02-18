@@ -94,23 +94,24 @@ int main(){
   ! the accumulators
   \*****************************************/
   double zero(0.00);
-  int threadID=0;
+  int threadID=0, iWalks=0, iAccum=0, jAccum=0, iPos=0;
   unsigned VSize=wostr_part.mpi_lsize, nAccs=wostr_part.nAccumsPerMPI;
   const int    * inDomain = InDomainFlag.data();
   const double * uSol     = u_sol.data();
   const double * accum    = accumulator.data();
  
   #pragma omp target map(tofrom:inDomain[0:VSize]) map(to:accum[0:nAccs],uSol[0:VSize])
+  #pragma omp private(threadID, iWalks, iAccum, jAccum, iPos)
   {
     //Sample the Monte-Carlo problem
     //and aggregate on the accumulators
     threadID = omp_get_thread_num();
     Point<double, sdim> x0, x;
-    for(unsigned iAccum=0; iAccum<(wostr_part.nAccumsPerThread); iAccum++){
-      unsigned jAccum = threadID*(wostr_part.nAccumsPerThread) + iAccum;
-      unsigned iPos = (jAccum/wostr_part.nAccumsPerPart);
-      BHMeshPoint<double,int,2>(x0.data(), iPos + wostr_part.mpi_Istart, BHMeshData);
-      for(unsigned iWalks=0; iWalks<wostr_part.nWalksPerAccum; iWalks++){
+    for(iAccum=0; iAccum<(wostr_part.nAccumsPerThread); iAccum++){
+      jAccum = threadID*(wostr_part.nAccumsPerThread) + iAccum;
+      iPos = (jAccum/wostr_part.nAccumsPerPart);
+      BHMeshPoint<double,int,sdim>(x0.data(), iPos + wostr_part.mpi_Istart, BHMeshData);
+      for(iWalks=0; iWalks<wostr_part.nWalksPerAccum; iWalks++){
         //x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
         //                                 (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
         //accumulator[jAccum] += g(x);

@@ -113,7 +113,7 @@ FORCE_INLINE uint findIteratorOwner(const uint GnodeID, const uint nPartitions, 
 // 3: There is no device, so just use original MPI-partitions
 template<typename real, typename uint, size_t sdim>
 FORCE_INLINE void partitionProblem(MPIComm & comm
-                                 , const blockHyperMeshData<real,uint,sddddim> & BHMeshData
+                                 , const blockHyperMeshData<real,uint,sdim> & BHMeshData
                                  , const uint & nWalks
                                  , WoStr_Partition<uint> & part)
 {
