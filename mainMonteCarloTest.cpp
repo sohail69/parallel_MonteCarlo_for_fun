@@ -48,9 +48,9 @@ int main(){
   MPIComm mpiComm(IS_MPI_ON);
 
   // Problem base size
-  const int nWalks = 65536;              //Total number of Monte Carlo samples
-  const int s = 128;                     //Image length-width
-  const double dx= 1.0/double(s);        //Image increment
+  const int nWalks = 65536;       //Total number of Monte Carlo samples
+  const int s = 128;              //Image length-width
+  const double dx= 1.0/double(s); //Image increment
 
   /*****************************************\
   ! Read in any boundary data build the
@@ -92,39 +92,30 @@ int main(){
   ! Run the Monte-Carlo random walks for
   ! running the PDE problem
   \*****************************************/
-/*double zero(0.00);
-  #pragma omp target map(tofrom:C[0:Ndim*Mdim]) map(to:B[0:Pdim*Mdim],A[0:Ndim*Pdim])
-  #pragma omp private(threadID, parentMPI_ID, rnd_seed, nAccums, AccumStart)
+  double zero(0.00);
+  int threadID=0;
+  unsigned VSize=wostr_part.mpi_lsize, nAccs=wostr_part.nAccumsPerMPI;
+  const int    * inDomain = InDomainFlag.data();
+  const double * uSol     = u_sol.data();
+  const double * accum    = accumulator.data();
+ 
+  #pragma omp target map(tofrom:inDomain[0:VSize]) map(to:accum[0:nAccs],uSol[0:VSize])
   {
-    threadID = omp_get_thread_num();
-    parentMPI_ID = FindAccumParentID<int>(threadID, nTotAccumulators, MPI_lSize);
-
     //Sample the Monte-Carlo problem
     //and aggregate on the accumulators
+    threadID = omp_get_thread_num();
     for(unsigned iAccum=0; iAccum<(wostr_part.nAccumsPerThread); iAccum++){
       unsigned jAccum = threadID*(wostr_part.nAccumsPerThread) + iAccum;
-      unsigned iPos = (jAccum/);
+      unsigned iPos = (jAccum/wostr_part.nAccumsPerPart);
       Point<double, sdim> x0, x;
       BHMeshPoint<double,int,2>(x0.data(), iPos + wostr_part.mpi_Istart, BHMeshData);
-      for(unsigned iWalks=0; iWalks<; iWalks++){
-
-        accumulator[jAccum] += g(x);
+      for(unsigned iWalks=0; iWalks<wostr_part.nWalksPerAccum; iWalks++){
+        //x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
+        //                                 (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
+        //accumulator[jAccum] += g(x);
       }
     }
-
-    for(int iSubAccum=0; iSubAccum<nAccum; iSubAccum++){
-      accumulator[threadID] = double(0.00);
-      for(int IWalk=0; IWalk<nWalksPerThread; IWalk++){
-        I = parentMPI_ID + MPI_ITstart;
-        rnd_seed = 0;
-        Point<double, sdim> x0;
-        BHMeshPoint<double,int,2>(x0.data(), I, BHMeshData);
-        Point<real,sdim> x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
-                                           (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
-        accumulator[threadID] += g(x);
-      }
-    }
-  }*/
+  }
 
   /*****************************************\
   ! Aggregate the solution partial
@@ -132,16 +123,13 @@ int main(){
   \*****************************************/
   // First find all initial points
   // that fall inside the domain
-
-/*
   for(unsigned iPos=0; iPos< wostr_part.mpi_lsize; iPos++){
     unsigned nAccums  = wostr_part.nAccumsPerPart;
     unsigned AccStart = iPos * wostr_part.nAccumsPerPart;
     u_sol[iPos] = double(0.00);
     for(unsigned iAccum=AccStart; iAccum<(AccStart+nAccums); iAccum++) u_sol[iPos] += accumulator[iAccum];
     u_sol[iPos] /= double(nWalks);
-  }*/
-
+  }
 
   /*****************************************\
   ! Output the solution
@@ -163,8 +151,8 @@ int main(){
 
 
   //clean-up
-  accumulator.clear();
   u_sol.clear();
+  accumulator.clear();
   InDomainFlag.clear();
   MPI_Finalize();
   return 0;

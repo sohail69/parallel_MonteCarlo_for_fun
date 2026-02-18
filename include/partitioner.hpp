@@ -198,7 +198,7 @@ FORCE_INLINE void partitionProblem(MPIComm & comm
   //Partition the full local problem
   //among the threads\devices this is
   //for both the geometry and the walks
-  part.ThreadPart_GCD   = GCD_pairAlg( part.mpi_lsize, part.nThreadsPerMPI);
+  part.ThreadPart_GCD   = GCD_pairAlg(part.mpi_lsize, part.nThreadsPerMPI);
   part.nAccumsPerMPI    = part.mpi_lsize * (part.nThreadsPerMPI/part.ThreadPart_GCD);
   part.nAccumsPerPart   = (part.nThreadsPerMPI/part.ThreadPart_GCD);
   part.nAccumsPerThread = (part.mpi_lsize/part.ThreadPart_GCD);
