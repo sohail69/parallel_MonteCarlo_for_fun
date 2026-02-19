@@ -16,6 +16,7 @@
 template<typename real, size_t sdim, size_t edim>
 struct boundary
 {
+ int bc_type=1;
  real vals[sdim];
  int tags[sdim];
 };

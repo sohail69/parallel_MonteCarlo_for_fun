@@ -11,6 +11,33 @@
 
 
 /**************************************\
+! The walk on stars algorithm
+! for a potentially arbitrary
+! Partial differential equation
+\**************************************/
+template<typename real, typename RNGData, size_t sdim, size_t edim>
+FORCE_INLINE Point<real,sdim> WoStr_walk(const Point<real,sdim>                  & x0         // evaluation point
+                                       , std::vector<boundary<double,sdim,edim>> & boundaries // The boundaries
+                                       , std::unique_ptr<GreensFnBall<sdim>>     & greensFn   // Greens function
+                                       , std::function<void(RNGData&)> rngUpdate              // RN-update
+                                       , RNGData & seedData)                                  // RN-data
+{
+  //Star radius
+  float starRadius;
+  ComputeStarRadius<real>(starRadius);
+
+  //update the ball center and radius
+  greensFn->updateBall(state.currentPt, starRadius);
+
+  // sample a direction uniformly
+  VecND<real,sdim> direction = sampleUnitSphereUniform<real,RNGData,sdim>(rngUpdate, seedData);
+
+
+
+}
+
+
+/**************************************\
 ! solves a Laplace equation Delta u = 0
 ! at x0, where the Dirichlet and Neumann
 ! boundaries are each given by a 

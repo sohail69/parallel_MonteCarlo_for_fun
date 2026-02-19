@@ -139,13 +139,10 @@ int main(){
   // Printing some extra data to
   // console (to check for if
   // program launched correctly)
-  if(mpiComm.getProcID() == 0) std::cout << "Iterators" << std::endl;
-  std::cout << std::setw(10) << wostr_part.procID
-            << std::setw(10) << wostr_part.nProcs
-            << std::setw(10) << wostr_part.nAccumsPerMPI
-            << std::setw(10) << wostr_part.mpi_Istart
-            << std::setw(10) << wostr_part.mpi_Iend
-            << std::setw(10) << wostr_part.mpi_lsize  << std::endl;
+  if(mpiComm.getProcID() == 0) std::cout << "Iterators"  << std::endl;
+  std::cout << std::setw(10) << wostr_part.procID        << std::setw(10) << wostr_part.nProcs
+            << std::setw(10) << wostr_part.nAccumsPerMPI << std::setw(10) << wostr_part.mpi_Istart
+            << std::setw(10) << wostr_part.mpi_Iend      << std::setw(10) << wostr_part.mpi_lsize  << std::endl;
 
   // Output the data into
   // a file (the original

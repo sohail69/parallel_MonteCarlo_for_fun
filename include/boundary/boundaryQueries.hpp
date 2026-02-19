@@ -121,6 +121,102 @@ void findClosestRayIntersectionPoint(const boundary<real,sdim,edim> & NeumBC
 };
 
 
+/**************************************\
+!
+! Compute the star-shaped region
+! radii
+!
+\**************************************/
+/*
+template<typename real>
+void ComputeStarRadius(float & starRadius)
+{
+  if (firstStep && firstSphereRadius > 0.0f) {
+    starRadius = firstSphereRadius;
+  }else{
+    // for problems with double-sided boundary conditions, flip the current
+    // normal orientation if the geometry is front-facing
+    flipNormalOrientation = false;
+    if (walkSettings.solveDoubleSided && state.onNeumannBoundary) {
+      if (state.prevDistance > 0.0f && state.prevDirection.dot(state.currentNormal) < 0.0f) {
+        state.currentNormal *= -1.0f;
+        flipNormalOrientation = true;
+      }
+    }
+
+    if (walkSettings.stepsBeforeUsingMaximalSpheres <= state.walkLength) {
+      starRadius = dirichletDist;
+    } else {
+      // NOTE: using dirichletDist as the maximum radius for the closest silhouette
+      // query can result in a smaller than maximal star-shaped region: should ideally
+      // use the distance to the closest visible Dirichlet point
+      starRadius = queries.computeStarRadius(state.currentPt, walkSettings.minStarRadius
+                                            ,dirichletDist, walkSettings.silhouettePrecision
+                                            ,flipNormalOrientation);
+
+      // shrink the radius slightly for numerical robustness---using a conservative
+      // distance does not impact correctness
+      if (walkSettings.minStarRadius <= dirichletDist) {
+        starRadius = std::max(RADIUS_SHRINK_PERCENTAGE*starRadius, walkSettings.minStarRadius);
+      }
+    }
+  }
+};*/
+
+
+/**************************************\
+!
+! Compute the Neumann boundary
+! condition
+!
+\**************************************/
+/*
+if (!walkSettings.ignoreNeumannContribution) {
+  // compute the non-zero Neumann contribution inside the star-shaped region;
+  // define the Neumann value to be zero outside this region
+  BoundarySample<DIM> neumannSample;
+  for (int i = 0; i < DIM; i++) randNumsForNeumannSampling[i] = sampler.nextFloat();
+  if (queries.sampleNeumann(state.currentPt, starRadius, randNumsForNeumannSampling, neumannSample)) {
+    Vector<DIM> directionToSample = neumannSample.pt - state.currentPt;
+    float distToSample = directionToSample.norm();
+    float alpha = state.onNeumannBoundary ? 2.0f : 1.0f;
+    bool estimateBoundaryNormalAligned = false;
+
+    if (walkSettings.solveDoubleSided) {
+      // normalize the direction to the sample, and flip the sample normal
+      // orientation if the geometry is front-facing; NOTE: using a precision
+      // parameter since unlike direction sampling, samples can lie on the same
+      // halfplane as the current walk location
+      directionToSample /= distToSample;
+      if (flipNormalOrientation) {
+        neumannSample.normal *= -1.0f;
+        estimateBoundaryNormalAligned = true;
+      } else if (directionToSample.dot(neumannSample.normal) < -walkSettings.silhouettePrecision) {
+        bool flipNeumannSampleNormal = true;
+        if (alpha > 1.0f) {
+          // on concave boundaries, we want to sample back-facing neumann
+          // values on front-facing geometry below the hemisphere, so we
+          // avoid flipping the normal orientation in this case
+          flipNeumannSampleNormal = directionToSample.dot(state.currentNormal) < -walkSettings.silhouettePrecision;
+        }
+        if (flipNeumannSampleNormal) {
+          neumannSample.normal *= -1.0f;
+          estimateBoundaryNormalAligned = true;
+        }
+      }
+    }
+    if (neumannSample.pdf > 0.0f && distToSample < starRadius && 
+        !queries.intersectsWithNeumann(state.currentPt, neumannSample.pt, state.currentNormal, 
+                                       neumannSample.normal, state.onNeumannBoundary, true))
+    {
+      float G = greensFn->evaluate(state.currentPt, neumannSample.pt);
+      Value<T, DIM> h = walkSettings.solveDoubleSided ? 
+                        pde.neumannDoubleSided(neumannSample.pt, estimateBoundaryNormalAligned) :             
+                        pde.neumann(neumannSample.pt);
+      state.totalNeumannContribution += state.throughput*alpha*G*h/neumannSample.pdf;
+    }
+  }
+}*/
 
 /**************************************\
 !

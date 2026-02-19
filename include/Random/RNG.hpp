@@ -80,7 +80,7 @@ FORCE_INLINE void LCG32_rngUpdate(LCG32_rngData & rqd_seed){
 \**************************************/
 struct XORSHIFT256_rngData
 {
-  const size_t rand_max = (1UL << 64);
+  const size_t rand_max = sizeof(uint64_t);
   uint64_t s[4];
   uint64_t randomNumber=0UL;
 };
