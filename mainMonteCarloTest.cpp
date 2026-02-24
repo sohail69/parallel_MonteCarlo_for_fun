@@ -114,6 +114,7 @@ int main(){
         //x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
         //                                 (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
         //accumulator[jAccum] += g(x);
+        accumulator[jAccum] += std::exp( -(x0[0]*x0[0] + x0[1]*x0[1]) );
       }
     }
   }
@@ -135,21 +136,19 @@ int main(){
   /*****************************************\
   ! Output the solution
   \*****************************************/
-  // Printing some extra data to
-  // console (to check for if
-  // program launched correctly)
+  // Output the data into a
+  // file (Outputs to paraview)
+  ParaViewWriter<double,sdim> pvIO(BHMeshData, wostr_part, mpiComm);
+  std::string dataName = "u_sol";
+  std::string fName    = "solution_output";
+  pvIO.VTKwrite(fName, dataName, u_sol, 1);
+
+  // Printing some extra data to console (to
+  // check for if program launched correctly)
   if(mpiComm.getProcID() == 0) std::cout << "Iterators"  << std::endl;
   std::cout << std::setw(10) << wostr_part.procID        << std::setw(10) << wostr_part.nProcs
             << std::setw(10) << wostr_part.nAccumsPerMPI << std::setw(10) << wostr_part.mpi_Istart
             << std::setw(10) << wostr_part.mpi_Iend      << std::setw(10) << wostr_part.mpi_lsize  << std::endl;
-
-  // Output the data into
-  // a file (the original
-  // used CSV's, IO tbd)
-  // (Outputs to paraview)
-  ParaViewWriter<double,sdim> pvIO(BHMeshData, wostr_part, mpiComm);
-  std::string fName = "solution_output";
-  pvIO.VTKwrite(fName, u_sol, 1);
 
   //clean-up
   u_sol.clear();

@@ -5,16 +5,17 @@
 class MPIComm{
   private:
   int procID, nProcs;
+  MPI_Comm comm = MPI_COMM_WORLD;
   int MPIerr;
-  MPI_Comm comm=MPI_COMM_WORLD;
 
   public:
     //The constructor
     MPIComm(bool IS_MPI_ON);
 
     //Get MPI process data
-    FORCE_INLINE int &getProcID() { return procID;};
-    FORCE_INLINE int &getNProcs() { return nProcs;};
+    FORCE_INLINE int &getProcID()    { return procID;};
+    FORCE_INLINE int &getNProcs()    { return nProcs;};
+    FORCE_INLINE MPI_Comm &getComm() { return comm;};
 };
 
 //The constructor

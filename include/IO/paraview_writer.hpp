@@ -36,11 +36,7 @@ constexpr uint1 intPow(const uint1 & a, const uint2 & b){
 template<int sdim, int nNodes>
 void hyperCubeOffsets(int Offsets[nNodes*sdim]){
   for(int i=0; i<nNodes; i++){
-    for(int j=0; j<sdim; j++){
-      Offsets[i*sdim + j] = (i/intPow<int,int>(2,j))%2;
-      std::cout << std::setw(8) << Offsets[i*sdim + j];
-    }
-    std::cout << std::endl;
+    for(int j=0; j<sdim; j++) Offsets[i*sdim + j] = (i/intPow<int,int>(2,j))%2;
   }
 }
 
@@ -53,17 +49,17 @@ template<typename real, size_t sdim>
 class ParaViewWriter
 {
   private:
-    MPI_Request req;
-    MPI_Status status;
-    int MPIerr;
-
     //Referenced objects
     const blockHyperMeshData<real,int,sdim> & BHMeshData;
     const WoStr_Partition<int> & wostr_part;
     MPIComm & mpiComm;
 
     //Write the data of the VTK file
-    void DataWrite(std::ofstream& oFile, const std::vector<real> & data, const size_t nVars){};
+    void DataWrite(std::ofstream& oFile
+                 , const std::string & datName
+                 , const std::vector<real> & data
+                 , const size_t nVars);
+
   public:
     //Constructor
     ParaViewWriter(const blockHyperMeshData<real,int,sdim> & BHMeshData_
@@ -74,7 +70,10 @@ class ParaViewWriter
     ~ParaViewWriter();
 
     //Write data file
-    void VTKwrite(const std::string & fName, const std::vector<real> & data, const size_t nVars);
+    void VTKwrite(const std::string & fName
+                 , const std::string & datName
+                 , const std::vector<real> & data
+                 , const size_t nVars);
 };
 
 /*****************************************\
@@ -95,11 +94,12 @@ template<typename real, size_t sdim>
 ParaViewWriter<real,sdim>::~ParaViewWriter(){};
 
 /*****************************************\
-! Output some data
+! The simple VTK writer
 !
 \*****************************************/
 template<typename real, size_t sdim>
 void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
+                                       , const std::string & datName
                                        , const std::vector<real> & data
                                        , const size_t nVars)
 {
@@ -110,9 +110,8 @@ void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
   for(int i=0; i<sdim; i++) nnTot  *= BHMeshData.sizes[i];
   for(int i=0; i<sdim; i++) nCells *= (BHMeshData.sizes[i] -1);
 
-  //If process 0, then open
-  //file and set the headers
-  //output points and elms
+  //If process 0, then open file and set
+  //the headers output points and elms
   if(wostr_part.procID == 0){
     OutFile.open(fName + ".vtk");
     OutFile << "# vtk DataFile Version 2.0"      << std::endl;
@@ -125,8 +124,7 @@ void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
     std::array<real,sdim> Point;
     for(int i=0; i<nnTot; i++){
       BHMeshPoint<real,int,sdim>(Point.data(), i, BHMeshData);
-      for(int j=0; j<sdim; j++) OutFile << std::setw(15) << Point[j];
-      for(int j=sdim; j<3; j++) OutFile << std::setw(15) << 0.00;
+      for(int j=0; j<3; j++) OutFile << std::setw(15) << ((j < sdim) ? Point[j] : 0.00);
       OutFile << std::endl;
     }
 
@@ -162,9 +160,63 @@ void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
   }
 
   //Write the data
-  DataWrite(OutFile, data, nVars);
+  DataWrite(OutFile, datName, data, nVars);
 
   //Close the file
   if(wostr_part.procID == 0) OutFile.close();
 };
 
+/*****************************************\
+! Output some data (used by the VTK
+! writer)
+\*****************************************/
+template<typename real, size_t sdim>
+void ParaViewWriter<real,sdim>::DataWrite(std::ofstream& oFile
+                                        , const std::string & datName
+                                        , const std::vector<real> & send_buf
+                                        , const size_t nVars)
+{
+  //If process 0 write
+  //out the headers
+  int procID = wostr_part.procID;
+  int nCellsTot = wostr_part.total_samplePoints;
+  if(procID == 0){
+    oFile << "POINT_DATA "+std::to_string(nCellsTot)<< std::endl;
+    oFile << "SCALARS "+datName+" float "          << std::endl;
+    oFile << " LOOKUP_TABLE "+datName+"Tab"        << std::endl;
+  }
+
+  //The MPI task requests
+  MPI_Request req;
+  MPI_Status statu;
+  int MPIerr;
+  MPI_Datatype MPIDtype=MPI_DOUBLE;
+
+  //Send-recieve and Output the VTK Mesh data
+  int part_size = nVars*PartitionSize<int>(procID, wostr_part.nProcs, wostr_part.total_samplePoints);
+  if(procID != 0){
+    MPIerr=MPI_Isend(send_buf.data(),part_size,MPIDtype,0,procID,mpiComm.getComm(),&req);
+    std::cout << "PROC_ID : " << procID << " " << part_size << std::endl;
+  }
+  MPI_Barrier(mpiComm.getComm());
+
+  std::vector<real> recv_buf(part_size);
+  if(procID == 0){
+     for(int iProc=0; iProc<wostr_part.nProcs; iProc++){
+       int nCells_part = PartitionSize<int>(iProc, wostr_part.nProcs, wostr_part.total_samplePoints);
+       int nVarsTot = nCells_part*nVars;
+       recv_buf.resize(nVarsTot);
+       std::cout << "I_PROC_ID : " << procID << " " << nCells_part << std::endl;
+
+       if(iProc!=0) MPIerr=MPI_Recv(recv_buf.data(),nVarsTot,MPIDtype,iProc,iProc,mpiComm.getComm(),&statu);
+       for(int iCell=0; iCell<nCells_part; iCell++){
+         for(int iVars=0; iVars<nVars; iVars++){
+           oFile << std::setw(12) << ((iProc==0)? send_buf[iCell*nVars+iVars] : recv_buf[iCell*nVars+iVars]);
+         }
+         oFile << std::endl;
+       }
+     }
+  }
+  MPI_Barrier(mpiComm.getComm());
+  recv_buf.clear();
+};

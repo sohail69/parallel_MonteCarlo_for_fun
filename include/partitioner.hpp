@@ -64,6 +64,14 @@ FORCE_INLINE uint lastIterator(const uint tiD, const uint nPartitions, const uin
   return ((rem!=0) ? ((tiD<rem)? tnend0 : tnend1) : tnend2) - 1;
 };
 
+
+//Partition size
+template<typename uint>
+FORCE_INLINE uint PartitionSize(const uint tiD, const uint nPartitions, const uint nsize){
+  return lastIterator<uint>(tiD, nPartitions, nsize) - firstIterator<uint>(tiD, nPartitions, nsize) + 1;
+};
+
+
 //Finds the greatest common
 //divisor for a pair of numbers
 template<typename uint>
