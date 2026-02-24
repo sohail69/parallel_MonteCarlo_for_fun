@@ -4,9 +4,7 @@
 // Conditions" (2023), assuming no source term and zero-Neumann conditions.
 // NOTE: this code makes a few shortcuts for the sake of code brevity; may
 // be more suitable for tutorials than for production code/evaluation.
-#include <algorithm>
 #include <array>
-#include <complex>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -20,6 +18,7 @@
 #include <omp.h>
 #include "include/MPIcomm.hpp"
 #include "include/partitioner.hpp"
+#include "include/IO/paraview_writer.hpp"
 
 //Geometry libs
 #include "include/blockHyperMesh.hpp"
@@ -147,7 +146,10 @@ int main(){
   // Output the data into
   // a file (the original
   // used CSV's, IO tbd)
-
+  // (Outputs to paraview)
+  ParaViewWriter<double,sdim> pvIO(BHMeshData, wostr_part, mpiComm);
+  std::string fName = "solution_output";
+  pvIO.VTKwrite(fName, u_sol, 1);
 
   //clean-up
   u_sol.clear();
