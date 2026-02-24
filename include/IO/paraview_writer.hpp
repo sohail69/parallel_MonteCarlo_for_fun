@@ -61,6 +61,9 @@ class ParaViewWriter
     const blockHyperMeshData<real,int,sdim> & BHMeshData;
     const WoStr_Partition<int> & wostr_part;
     MPIComm & mpiComm;
+
+    //Write the data of the VTK file
+    void DataWrite(std::ofstream& oFile, const std::vector<real> & data, const size_t nVars){};
   public:
     //Constructor
     ParaViewWriter(const blockHyperMeshData<real,int,sdim> & BHMeshData_
@@ -70,7 +73,7 @@ class ParaViewWriter
     //Destructor
     ~ParaViewWriter();
 
-    //Write data
+    //Write data file
     void VTKwrite(const std::string & fName, const std::vector<real> & data, const size_t nVars);
 };
 
@@ -127,27 +130,41 @@ void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
       OutFile << std::endl;
     }
 
+    //Calculate the necessary topological
+    //information for n-Dimensional hyperCube
+    const int nNodes = intPow<int,size_t>(2, sdim);
+    int ItersND[sdim], ItersND_base[sdim],  Csizes[sdim], Nodes[nNodes], Offsets[nNodes*sdim];
+    for(int i=0; i<sdim; i++) Csizes[i] = BHMeshData.sizes[i] - 1;
+    hyperCubeOffsets<sdim,nNodes>(Offsets);
+
     //Output the cell headers
-    std::string HName="CELLS  " + std::to_string(nCells) + "  " + std::to_string(nVars*nCells);
+    std::string HName="CELLS  " + std::to_string(nCells) + "  " + std::to_string((nNodes+1)*nCells);
     OutFile << std::endl << HName << std::endl;
 
     //Output the cell topologies
     //for n-Dimensional hyperCube
-    const int nNodes = intPow<int,size_t>(2, sdim);
-    int ItersND[sdim], ItersND_base[sdim], Nodes[nNodes], Offsets[nNodes*sdim];
-    hyperCubeOffsets<sdim,nNodes>(Offsets);
     for(int iCell=0; iCell<nCells; iCell++){
-      BHMeshInvIter<real,int,sdim>(ItersND_base, iCell, BHMeshData);
+      BHMeshInvIter<int,sdim>(ItersND_base, iCell, Csizes);
       for(int i=0; i<nNodes; i++){
         for(int k=0; k<sdim; k++) ItersND[k] = ItersND_base[k] + Offsets[i*sdim + k];
         Nodes[i] = BHMeshFwdIter<real,int,sdim>(ItersND, BHMeshData);
       }
+      OutFile << std::setw(10) << nNodes;
       for(int i=0; i<nNodes; i++) OutFile << std::setw(10) << Nodes[i];
       OutFile << std::endl;
     }
+
+    //Output the Cell types
+    OutFile << "CELL_TYPES " + std::to_string(nCells) << std::endl;
+    int CTypes[3] = {3, 8, 11};
+    int CType = ((sdim <= 3)&&(sdim >= 1)) ? CTypes[sdim-1] : 7;
+    for(int iCell=0; iCell<nCells; iCell++) OutFile << std::setw(10) << CType << std::endl;
   }
 
+  //Write the data
+  DataWrite(OutFile, data, nVars);
 
+  //Close the file
   if(wostr_part.procID == 0) OutFile.close();
 };
 

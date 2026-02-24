@@ -45,6 +45,22 @@ FORCE_INLINE void BHMeshInvIter(uint ItersND[dim]
   }
 };
 
+//The hyper-block mesh
+//Inverse iterator (for custom sizes)
+template<typename uint, uint dim>
+FORCE_INLINE void BHMeshInvIter(uint ItersND[dim]
+                              , const uint & Iter1D
+                              , const uint sizes[dim])
+{
+  uint a = Iter1D;
+  for(uint I=0; I<dim; I++){
+    uint temp = uint(a/sizes[dim-I-1]);
+    ItersND[dim-I-1] = a - temp*sizes[dim-I-1];
+    a = temp;
+  }
+};
+
+
 
 //Gives a physical point
 //from a hyper-block mesh
