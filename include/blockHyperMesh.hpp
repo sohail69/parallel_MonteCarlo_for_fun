@@ -13,7 +13,9 @@ struct PACKSTRUCT blockHyperMeshData{
 //The hyper-block mesh
 //forward iterator
 template<typename real, typename uint, uint dim>
-FORCE_INLINE uint BHMeshFwdIter(const uint Iters[dim], const blockHyperMeshData<real,uint,dim> & BHMdata){
+FORCE_INLINE uint BHMeshFwdIter(const uint Iters[dim]
+                              , const blockHyperMeshData<real,uint,dim> & BHMdata)
+{
   uint Pos(0);
   #pragma unroll
   for(uint I=0; I<dim; I++){
@@ -31,11 +33,14 @@ FORCE_INLINE uint BHMeshFwdIter(const uint Iters[dim], const blockHyperMeshData<
 //The hyper-block mesh
 //Inverse iterator
 template<typename real, typename uint, uint dim>
-FORCE_INLINE void BHMeshInvIter(uint ItersND[dim], const uint & Iter1D, const blockHyperMeshData<real,uint,dim> & BHMdata){
+FORCE_INLINE void BHMeshInvIter(uint ItersND[dim]
+                              , const uint & Iter1D
+                              , const blockHyperMeshData<real,uint,dim> & BHMdata)
+{
   uint a = Iter1D;
   for(uint I=0; I<dim; I++){
     uint temp = uint(a/BHMdata.sizes[dim-I-1]);
-    ItersND[I] = a - temp*BHMdata.sizes[dim-I-1];
+    ItersND[dim-I-1] = a - temp*BHMdata.sizes[dim-I-1];
     a = temp;
   }
 };
