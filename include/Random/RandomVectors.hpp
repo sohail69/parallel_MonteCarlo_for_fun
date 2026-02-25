@@ -47,31 +47,32 @@ FORCE_INLINE VecND<real,sdim> sampleUnitSphereUniform( VecND<real,sdim> randVecU
 ! Date  : 31/01/2025
 !
 \**************************************/
-/*
+
 template<typename real>
-FORCE_INLINE VecND<real,sdim>  sampleUnitDiskConcentric(VecND<real,sdim> randVecUnit)
+FORCE_INLINE VecND<real,2> sampleConcentricUnitDisk(VecND<real,3> randVecUnit)
 {
   //Zero out the vector
-  VecND<real,sdim> uniformHemiSphereUnitRandVec;
-  for(size_t i=0; i<sdim; i++) uniformHemiSphereUnitRandVec[i] = real(0.00);
-  if(sdim == 2){
-    real u1 = 2.00*randVecUnit[0] - 1.00;
-    real z = std::sqrt(std::max(0.00, 1.00 - u1*u1));
-    uniformHemiSphereUnitRandVec = {u1, z};
-  }
-//---------------------- Repair this, start here
-  if(sdim == 3){
-    real d2=0.00;
-    VecND<real,2> d = sampleUnitDiskConcentric(randVecUnit);
-    for(size_t i=0; i<sdim; i++) d2 += d[i];
-    real z = std::sqrt(std::max(0.00, 1.00 - d2));
-    uniformHemiSphereUnitRandVec = {d[0], d[1], z};
-  }
-//----------------------
+  VecND<real,2> uniformConcentricDiskUnitRandVec = {0.00, 0.00};
 
+  // map uniform random numbers to [-1,1]^2
+  real u1 = 2.00*randVecUnit[0] - 1.00;
+  real u2 = 2.00*randVecUnit[1] - 1.00;
+  real theta, r;
 
-  return uniformHemiSphereUnitRandVec;
-};*/
+  // handle degeneracy at the origin
+  if (u1 != 0 && u2 != 0) {
+    // apply concentric mapping to point
+    if(std::abs(u1) > std::abs(u2)){
+      r = u1;
+      theta = 0.25*M_PI*(u2/u1);
+    }else{
+      r = u2;
+      theta = 0.50*M_PI*(1.00 - 0.50*(u1/u2));
+    }
+    uniformConcentricDiskUnitRandVec = {r*std::cos(theta), r*std::sin(theta)};
+  }
+  return uniformConcentricDiskUnitRandVec;
+};
 
 /**************************************\
 !
@@ -94,18 +95,13 @@ FORCE_INLINE VecND<real,sdim>  sampleUnitHemisphereCosine(VecND<real,sdim> randV
     real z = std::sqrt(std::max(0.00, 1.00 - u1*u1));
     uniformHemiSphereUnitRandVec = {u1, z};
   }
-
-/***
   if(sdim == 3){
     real d2=0.00;
-    VecND<real,2> d = sampleUnitDiskConcentric(randVecUnit);
+    VecND<real,2> d = sampleConcentricUnitDisk(randVecUnit);
     for(size_t i=0; i<sdim; i++) d2 += d[i];
     real z = std::sqrt(std::max(0.00, 1.00 - d2));
     uniformHemiSphereUnitRandVec = {d[0], d[1], z};
   }
-***/
-
-
   return uniformHemiSphereUnitRandVec;
 };
 
@@ -146,17 +142,3 @@ FORCE_INLINE real pdfSampleBallUniform(real r)
   real pdf3D = 3.0/(4.0f*M_PI*r*r*r);
   return ((sdim==2) ? pdf2D : ((sdim==3) ? pdf3D : pdfUN) );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
