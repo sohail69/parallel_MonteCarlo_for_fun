@@ -179,44 +179,55 @@ void ParaViewWriter<real,sdim>::DataWrite(std::ofstream& oFile
   //If process 0 write
   //out the headers
   int procID = wostr_part.procID;
-  int nCellsTot = wostr_part.total_samplePoints;
   if(procID == 0){
-    oFile << "POINT_DATA "+std::to_string(nCellsTot)<< std::endl;
-    oFile << "SCALARS "+datName+" float "          << std::endl;
-    oFile << " LOOKUP_TABLE "+datName+"Tab"        << std::endl;
+    oFile << "POINT_DATA "+std::to_string(wostr_part.total_samplePoints) << std::endl;
+    oFile << "SCALARS "+datName+" float "                                << std::endl;
+    oFile << " LOOKUP_TABLE "+datName+"Tab"                              << std::endl;
   }
 
   //The MPI task requests
-  MPI_Request req;
-  MPI_Status statu;
+  MPI_Status stat[wostr_part.nProcs];
   int MPIerr;
   MPI_Datatype MPIDtype=MPI_DOUBLE;
 
-  //Send-recieve and Output the VTK Mesh data
+  //Send the data if not process-0
   int part_size = nVars*PartitionSize<int>(procID, wostr_part.nProcs, wostr_part.total_samplePoints);
   if(procID != 0){
-    MPIerr=MPI_Isend(send_buf.data(),part_size,MPIDtype,0,procID,mpiComm.getComm(),&req);
-    std::cout << "PROC_ID : " << procID << " " << part_size << std::endl;
+    MPIerr=MPI_Send(send_buf.data()      /*Data*/
+                    ,part_size           /*Count*/
+                    ,MPIDtype            /*Datatype*/
+                    ,0                   /*destination*/
+                    ,procID              /*Tag*/
+                    ,mpiComm.getComm()); /*Communicator*/
   }
-  MPI_Barrier(mpiComm.getComm());
 
-  std::vector<real> recv_buf(part_size);
+  //Recieve the data if process-0
+  std::vector<real> recv_buf;
   if(procID == 0){
-     for(int iProc=0; iProc<wostr_part.nProcs; iProc++){
-       int nCells_part = PartitionSize<int>(iProc, wostr_part.nProcs, wostr_part.total_samplePoints);
-       int nVarsTot = nCells_part*nVars;
-       recv_buf.resize(nVarsTot);
-       std::cout << "I_PROC_ID : " << procID << " " << nCells_part << std::endl;
-
-       if(iProc!=0) MPIerr=MPI_Recv(recv_buf.data(),nVarsTot,MPIDtype,iProc,iProc,mpiComm.getComm(),&statu);
-       for(int iCell=0; iCell<nCells_part; iCell++){
-         for(int iVars=0; iVars<nVars; iVars++){
-           oFile << std::setw(12) << ((iProc==0)? send_buf[iCell*nVars+iVars] : recv_buf[iCell*nVars+iVars]);
-         }
-         oFile << std::endl;
-       }
-     }
+    recv_buf.resize(nVars*wostr_part.total_samplePoints);
+    for(int iProc=0; iProc<wostr_part.nProcs; iProc++){
+      int id0=nVars*firstIterator<int>(iProc, wostr_part.nProcs, wostr_part.total_samplePoints);
+      int nSize=nVars*PartitionSize<int>(iProc, wostr_part.nProcs, wostr_part.total_samplePoints);
+      if(iProc!=0)MPIerr=MPI_Recv(&(recv_buf.data())[id0]  /*Data*/
+                                 ,nSize                    /*Count*/
+                                 ,MPIDtype                 /*Datatype*/
+                                 ,iProc                    /*Source*/
+                                 ,iProc                    /*Tag*/
+                                 ,mpiComm.getComm()        /*Communicator*/
+                                 ,&stat[iProc]);           /*Status*/
+    }
   }
-  MPI_Barrier(mpiComm.getComm());
+
+  //Print out the data to VTK file
+  if(procID == 0){
+    for(int iPoint=0; iPoint<wostr_part.total_samplePoints; iPoint++){
+      for(int iVars=0; iVars<nVars; iVars++){
+        int k = iPoint*nVars + iVars;
+        oFile << std::setw(12) << ( (k < part_size) ?  send_buf[k] : recv_buf[k]);
+     }
+     oFile << std::endl;
+    }
+  }
   recv_buf.clear();
+  MPI_Barrier(mpiComm.getComm());
 };

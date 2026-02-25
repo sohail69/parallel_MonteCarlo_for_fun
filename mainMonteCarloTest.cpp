@@ -114,7 +114,7 @@ int main(){
         //x = WoStr_point<double,XORSHIFT256_rngData,sdim,edim>
         //                                 (x0,Dirichlet,Neumann,lines<double>,XORSHIFT256_rngUpdate, rngData);
         //accumulator[jAccum] += g(x);
-        accumulator[jAccum] += std::exp( -(x0[0]*x0[0] + x0[1]*x0[1]) );
+        accumulator[jAccum] += std::exp( -(x0[0]-0.5)*(x0[0]-0.5) - (x0[1]-0.5)*(x0[1]-0.5) );
       }
     }
   }
