@@ -31,7 +31,7 @@ FORCE_INLINE Point<real,sdim> WoStr_walk(const Point<real,sdim>                 
 //  greensFn->updateBall(state.currentPt, starRadius);
 
   // sample a direction uniformly
-  VecND<real,sdim> direction = sampleUnitSphereUniform<real,RNGData,sdim>(rngUpdate, seedData);
+//  VecND<real,sdim> direction = sampleUnitSphereUniform<real,RNGData,sdim>(rngUpdate, seedData);
 
 
 
