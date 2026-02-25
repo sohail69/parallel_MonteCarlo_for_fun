@@ -46,7 +46,7 @@ void hyperCubeOffsets(int Offsets[nNodes*sdim]){
 ! hyperBlockMesh/Grid
 \*****************************************/
 template<typename real, size_t sdim>
-class ParaViewWriter
+class SimpleParaViewWriter
 {
   private:
     //Referenced objects
@@ -62,12 +62,12 @@ class ParaViewWriter
 
   public:
     //Constructor
-    ParaViewWriter(const blockHyperMeshData<real,int,sdim> & BHMeshData_
+    SimpleParaViewWriter(const blockHyperMeshData<real,int,sdim> & BHMeshData_
                  , const WoStr_Partition<int> & wostr_part_
                  , MPIComm & mpiComm_);
 
     //Destructor
-    ~ParaViewWriter();
+    ~SimpleParaViewWriter();
 
     //Write data file
     void VTKwrite(const std::string & fName
@@ -81,7 +81,7 @@ class ParaViewWriter
 !
 \*****************************************/
 template<typename real, size_t sdim>
-ParaViewWriter<real,sdim>::ParaViewWriter(const blockHyperMeshData<real,int,sdim> & BHMeshData_
+SimpleParaViewWriter<real,sdim>::SimpleParaViewWriter(const blockHyperMeshData<real,int,sdim> & BHMeshData_
                                         , const WoStr_Partition<int> & wostr_part_
                                         , MPIComm & mpiComm_) : BHMeshData(BHMeshData_), mpiComm(mpiComm_)
                                         , wostr_part(wostr_part_){};
@@ -91,14 +91,14 @@ ParaViewWriter<real,sdim>::ParaViewWriter(const blockHyperMeshData<real,int,sdim
 !
 \*****************************************/
 template<typename real, size_t sdim>
-ParaViewWriter<real,sdim>::~ParaViewWriter(){};
+SimpleParaViewWriter<real,sdim>::~SimpleParaViewWriter(){};
 
 /*****************************************\
 ! The simple VTK writer
 !
 \*****************************************/
 template<typename real, size_t sdim>
-void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
+void SimpleParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
                                        , const std::string & datName
                                        , const std::vector<real> & data
                                        , const size_t nVars)
@@ -171,7 +171,7 @@ void ParaViewWriter<real,sdim>::VTKwrite(const std::string & fName
 ! writer)
 \*****************************************/
 template<typename real, size_t sdim>
-void ParaViewWriter<real,sdim>::DataWrite(std::ofstream& oFile
+void SimpleParaViewWriter<real,sdim>::DataWrite(std::ofstream& oFile
                                         , const std::string & datName
                                         , const std::vector<real> & send_buf
                                         , const size_t nVars)
@@ -186,19 +186,19 @@ void ParaViewWriter<real,sdim>::DataWrite(std::ofstream& oFile
   }
 
   //The MPI task requests
+  MPI_Datatype MPIDtype=MPI_DOUBLE;
   MPI_Status stat[wostr_part.nProcs];
   int MPIerr;
-  MPI_Datatype MPIDtype=MPI_DOUBLE;
 
   //Send the data if not process-0
   int part_size = nVars*PartitionSize<int>(procID, wostr_part.nProcs, wostr_part.total_samplePoints);
   if(procID != 0){
-    MPIerr=MPI_Send(send_buf.data()      /*Data*/
-                    ,part_size           /*Count*/
-                    ,MPIDtype            /*Datatype*/
-                    ,0                   /*destination*/
-                    ,procID              /*Tag*/
-                    ,mpiComm.getComm()); /*Communicator*/
+    MPIerr=MPI_Send(send_buf.data()     /*Data*/
+                  , part_size           /*Count*/
+                  , MPIDtype            /*Datatype*/
+                  , 0                   /*destination*/
+                  , procID              /*Tag*/
+                  , mpiComm.getComm()); /*Communicator*/
   }
 
   //Recieve the data if process-0
@@ -209,12 +209,12 @@ void ParaViewWriter<real,sdim>::DataWrite(std::ofstream& oFile
       int id0=nVars*firstIterator<int>(iProc, wostr_part.nProcs, wostr_part.total_samplePoints);
       int nSize=nVars*PartitionSize<int>(iProc, wostr_part.nProcs, wostr_part.total_samplePoints);
       if(iProc!=0)MPIerr=MPI_Recv(&(recv_buf.data())[id0]  /*Data*/
-                                 ,nSize                    /*Count*/
-                                 ,MPIDtype                 /*Datatype*/
-                                 ,iProc                    /*Source*/
-                                 ,iProc                    /*Tag*/
-                                 ,mpiComm.getComm()        /*Communicator*/
-                                 ,&stat[iProc]);           /*Status*/
+                                , nSize                    /*Count*/
+                                , MPIDtype                 /*Datatype*/
+                                , iProc                    /*Source*/
+                                , iProc                    /*Tag*/
+                                , mpiComm.getComm()        /*Communicator*/
+                                , &stat[iProc]);           /*Status*/
     }
   }
 

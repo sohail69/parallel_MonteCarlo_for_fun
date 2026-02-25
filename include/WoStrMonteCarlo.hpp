@@ -6,6 +6,7 @@
 #include "globalMacros.hpp"
 #include "blockHyperMesh.hpp"
 #include "Random/RNG.hpp"
+#include "Random/RandomVectors.hpp"
 #include "boundary/localVectorAlgebra.hpp"
 #include "boundary/boundaryQueries.hpp"
 
@@ -18,16 +19,16 @@
 template<typename real, typename RNGData, size_t sdim, size_t edim>
 FORCE_INLINE Point<real,sdim> WoStr_walk(const Point<real,sdim>                  & x0         // evaluation point
                                        , std::vector<boundary<double,sdim,edim>> & boundaries // The boundaries
-                                       , std::unique_ptr<GreensFnBall<sdim>>     & greensFn   // Greens function
+//                                     , std::unique_ptr<GreensFnBall<sdim>>     & greensFn   // Greens function
                                        , std::function<void(RNGData&)> rngUpdate              // RN-update
                                        , RNGData & seedData)                                  // RN-data
 {
   //Star radius
   float starRadius;
-  ComputeStarRadius<real>(starRadius);
+//  ComputeStarRadius<real>(starRadius);
 
   //update the ball center and radius
-  greensFn->updateBall(state.currentPt, starRadius);
+//  greensFn->updateBall(state.currentPt, starRadius);
 
   // sample a direction uniformly
   VecND<real,sdim> direction = sampleUnitSphereUniform<real,RNGData,sdim>(rngUpdate, seedData);
@@ -76,6 +77,7 @@ FORCE_INLINE Point<real,sdim> WoStr_point(const Point<real,sdim>    & x0        
      // compute the radius of the largest star-shaped region
      dDirichlet  = findClosestDistance<real,sdim,edim>(DirchBC,x);
      dSilhouette = findSilhouettePointDistance<real,sdim,edim>(NeumBC,x);
+/*
      r = std::max( rMin, std::min(dDirichlet,dSilhouette) );
 
      // intersect a ray with the star-shaped region boundary
@@ -84,7 +86,7 @@ FORCE_INLINE Point<real,sdim> WoStr_point(const Point<real,sdim>    & x0        
      angles[0] = RNG_reNormalise<real,RNGData>(seedData, -M_PI, M_PI);
      if( onBoundary ) theta = theta/real(2.) + angleOf2DVec<real>(n); // sample from hemisphere around the normal
      VecND<real,sdim> v = getUnitVectorFromAnglesVecND<real,sdim>(angles);
-     x = intersectPolylines<real,unsigned>( x, v, r, boundaryNeumann, n, onBoundary );
+     x = intersectPolylines<real,unsigned>( x, v, r, boundaryNeumann, n, onBoundary );*/
      steps++;
    }while((dDirichlet > eps) && (steps < maxSteps));
    //stop if we hit the Dirichlet boundary, or the walk is too long

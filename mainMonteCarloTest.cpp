@@ -18,7 +18,7 @@
 #include <omp.h>
 #include "include/MPIcomm.hpp"
 #include "include/partitioner.hpp"
-#include "include/IO/paraview_writer.hpp"
+#include "include/IO/simple_paraview_writer.hpp"
 
 //Geometry libs
 #include "include/blockHyperMesh.hpp"
@@ -30,6 +30,10 @@
 #include "include/boundary/boundaryQueries.hpp"
 //#include "include/boundary/localVectorAlgebra.hpp"
 //#include "include/boundary/IntersectionDetection2D.hpp"
+
+//WoSt(r) Monte-Carlo libs
+#include "include/WoStrMonteCarlo.hpp"
+
 
 /*****************************************\
 ! A MPI-OpenMP parallel implementation
@@ -138,7 +142,7 @@ int main(){
   \*****************************************/
   // Output the data into a
   // file (Outputs to paraview)
-  ParaViewWriter<double,sdim> pvIO(BHMeshData, wostr_part, mpiComm);
+  SimpleParaViewWriter<double,sdim> pvIO(BHMeshData, wostr_part, mpiComm);
   std::string dataName = "u_sol";
   std::string fName    = "solution_output";
   pvIO.VTKwrite(fName, dataName, u_sol, 1);
