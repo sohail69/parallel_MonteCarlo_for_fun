@@ -21,8 +21,7 @@ FORCE_INLINE real RNG_reNormalise(const RNGData & seedData
                                 , const real    & rMin
                                 , const real    & rMax)
 {
-  const real rRandMax = 1.0/real(seedData.rand_max);
-  return  real(seedData.randomNumber)*rRandMax*(rMax-rMin) + rMin;
+  return  (real(seedData.randomNumber)/real(seedData.rand_max))*(rMax-rMin) + rMin;
 };
 
 /**************************************\
@@ -61,7 +60,7 @@ FORCE_INLINE void OG_randomUpdate(OG_randomData & rqd_seed){
 \**************************************/
 struct LCG32_rngData
 {
-  const size_t rand_max = (1L << 32);
+  const size_t rand_max = std::numeric_limits<uint32_t>::max();
   uint32_t randomNumber=0UL;
 };
 
@@ -80,9 +79,9 @@ FORCE_INLINE void LCG32_rngUpdate(LCG32_rngData & rqd_seed){
 \**************************************/
 struct XORSHIFT256_rngData
 {
-  const size_t rand_max = sizeof(uint64_t);
+  const size_t rand_max = std::numeric_limits<uint64_t>::max();
   uint64_t s[4];
-  uint64_t randomNumber=0UL;
+  uint64_t randomNumber=1UL;
 };
 
 FORCE_INLINE uint64_t XORSHIFT256_rol64(const uint64_t & x, const int & k){

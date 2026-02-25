@@ -40,9 +40,9 @@ FORCE_INLINE VecND<real,sdim> sampleUnitSphereUniform(std::function<void(RNGData
     uniformUnitRandVec = {std::cos(phi), std::sin(phi)};
   }
   if(sdim == 3){
-    real z = 1.0f - 2.0f*randVec[0];
-    real r = std::sqrt(std::max(0.0f, 1.0f - z*z));
-    real phi = 2.0f*M_PI*randVec[1];
+    real z = 1.0 - 2.0*randVec[0];
+    real r = std::sqrt(std::max(0.00, 1.00 - z*z));
+    real phi = 2.0*M_PI*randVec[1];
     uniformUnitRandVec = {r*std::cos(phi), r*std::sin(phi), z};
   }
   return uniformUnitRandVec;

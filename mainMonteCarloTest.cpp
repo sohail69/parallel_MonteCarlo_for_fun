@@ -31,7 +31,8 @@
 //#include "include/boundary/localVectorAlgebra.hpp"
 //#include "include/boundary/IntersectionDetection2D.hpp"
 
-//WoSt(r) Monte-Carlo libs
+//WoSt(r) Monte-Carlo and RNG libs
+#include "include/Random/RNG.hpp"
 #include "include/WoStrMonteCarlo.hpp"
 
 
@@ -153,6 +154,19 @@ int main(){
   std::cout << std::setw(10) << wostr_part.procID        << std::setw(10) << wostr_part.nProcs
             << std::setw(10) << wostr_part.nAccumsPerMPI << std::setw(10) << wostr_part.mpi_Istart
             << std::setw(10) << wostr_part.mpi_Iend      << std::setw(10) << wostr_part.mpi_lsize  << std::endl;
+
+  //Testing out the random unit vector
+  //on the sphere
+  if(mpiComm.getProcID() == 0)
+  {
+    VecND<double,3> vec;
+    XORSHIFT256_rngData rng_data;
+    for(int i=0; i<10; i++){
+      vec = sampleUnitSphereUniform<double,XORSHIFT256_rngData,3>(XORSHIFT256_rngUpdate, rng_data);
+      for(int j=0; j<3; j++) std::cout << std::setw(15) << vec[j];
+      std::cout << std::endl;
+    }
+  }
 
   //clean-up
   u_sol.clear();
