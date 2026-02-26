@@ -125,6 +125,71 @@ FORCE_INLINE VecND<real,sdim> sampleUnitBallUniform(VecND<real,sdim> randVecUnit
 
 /**************************************\
 !
+! Sample uniformly from a line segment
+! specialised for 1-D objects embedded
+! in 2-D space
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+!
+\**************************************/
+template<typename real, size_t sdim>
+FORCE_INLINE void sampleLineSegmentUniformly(const VecND<real,sdim> & pa
+                                           , const VecND<real,sdim> & pb
+                                           , VecND<real,sdim> & u
+                                           , VecND<real,sdim> & pt
+                                           , VecND<real,sdim> & n
+                                           , real & norm)
+{
+  norm=0.00;
+  if constexpr(sdim==2){
+    VecND<real,sdim> s = {pb[0]-pa[0], pb[1]-pa[1]};
+    pt = {pa[0] + u[0]*s[0], pa[1] + u[0]*s[1]};
+    n = {s[1], -s[0]};
+    norm = std::sqrt(n[0]*n[0] + n[1]*n[1]);
+    n = {n[0]/norm, n[1]/norm};
+  }
+}
+
+/**************************************\
+!
+! Sample uniformly from a triangular
+! facet specialised for 2-D objects
+! embedded in 3-D space
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+!
+\**************************************/
+template<typename real, size_t sdim>
+FORCE_INLINE void sampleTriangleUniformly(const VecND<real,sdim> & pa
+                                        , const VecND<real,sdim> & pb
+                                        , const VecND<real,sdim> & pc
+                                        , VecND<real,sdim> & u
+                                        , VecND<real,sdim> & pt
+                                        , VecND<real,sdim> & n
+                                        , real & norm)
+{
+  norm=0.00;
+  VecND<real,sdim> t1, t2;
+  if constexpr(sdim==3){
+    real u1 = std::sqrt(u[0]);
+    real u2 = u[1];
+    real a = 1.00 - u1;
+    real b = u2*u1;
+    real c = 1.00 - a - b;
+    pt = {pa*a[0] + pb*b[0] + pc*c[0], pa*a[1] + pb*b[1] + pc*c[1], pa*a[2] + pb*b[2] + pc*c[2]};
+    t1 = {pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]};
+    t2 = {pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2]};
+    n = {t1[1]*t2[2] - t1[2]*t2[1], t1[2]*t2[0] - t1[0]*t2[2], t1[0]*t2[1] - t1[1]*t2[0]};
+    norm = std::sqrt( n[0]*n[0] + n[1]*n[1] + n[2]*n[2] );
+    n = {n[0]/norm, n[1]/norm, n[2]/norm};
+    norm = 0.500*norm;
+  }
+}
+
+/**************************************\
+!
 ! The probability density function for
 ! a sample on the uniform sphere
 !
@@ -212,10 +277,57 @@ FORCE_INLINE void transformCoordinates(const VecND<real,sdim> & n, VecND<real,sd
   }
 };
 
+/**************************************\
+!
+! Stratified sample function
+! using a LatinHyperCube
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+!
+\**************************************/
+template<typename real, typename RNGData, size_t sdim>
+FORCE_INLINE void generateStratifiedSamples(std::vector<float>& samples
+                                          , size_t nSamples
+                                          , std::function<void(RNGData&)> rngUpdate
+                                          , RNGData & seedData)
+{
+  const real epsilon = std::numeric_limits<real>::epsilon();
+  const real oneMinusEpsilon = 1.00 - epsilon;
+  real invNSamples = 1.00/real(nSamples);
+  samples.resize(sdim*nSamples);
 
+  // generate LHS samples along diagonal
+  for (size_t i=0; i < nSamples; ++i) {
+    for (size_t j=0; j < sdim; ++j) {
+      rngUpdate(seedData);
+      real num = RNG_reNormalise<real, RNGData>(seedData,  real(0.00), real(1.00));
+      real sj = (real(i) + num)*invNSamples;
+      samples[sdim*i + j] = std::min(sj, oneMinusEpsilon);
+    }
+  }
 
+  // generate LHS samples in each dimenson
+  for (size_t i=0; i < sdim; ++i) {
+    for (size_t j=0; j < nSamples; ++j) {
+      rngUpdate(seedData);
+      size_t num = RNG_reNormalise<size_t, RNGData>(seedData,  0, nSamples - j);
+      size_t other = j + num;
+      std::swap(samples[sdim*j + i], samples[sdim*other + i]);
+    }
+  }
+}
 
-
-
-
-
+/**************************************\
+!
+! Clamp function
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+!
+\**************************************/
+template<typename T, typename U, typename V>
+FORCE_INLINE T clamp(T val, U low, V high)
+{
+  return (val < low) ?  low :  ((val > high) ? high : val);
+};

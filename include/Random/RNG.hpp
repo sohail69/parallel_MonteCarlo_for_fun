@@ -21,7 +21,7 @@ FORCE_INLINE real RNG_reNormalise(const RNGData & seedData
                                 , const real    & rMin
                                 , const real    & rMax)
 {
-  return  (real(seedData.randomNumber)/real(seedData.rand_max))*(rMax-rMin) + rMin;
+  return  ( real( seedData.randomNumber*(rMax-rMin) )/real(seedData.rand_max) )  + rMin;
 };
 
 /**************************************\

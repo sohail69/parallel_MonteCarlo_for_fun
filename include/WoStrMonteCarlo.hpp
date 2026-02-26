@@ -6,7 +6,7 @@
 #include "globalMacros.hpp"
 #include "blockHyperMesh.hpp"
 #include "Random/RNG.hpp"
-#include "Random/RandomVectors.hpp"
+#include "Random/RandomSampling.hpp"
 #include "boundary/localVectorAlgebra.hpp"
 #include "boundary/boundaryQueries.hpp"
 
