@@ -4,14 +4,12 @@
 #include "RNG.hpp"
 
 /**************************************\
-!
 ! Random unit vector that points from 
 ! the centre to a point on the surface
 ! of a unit sphere
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE VecND<real,sdim> sampleUnitSphereUniform( VecND<real,sdim> randVecUnit)
@@ -38,14 +36,12 @@ FORCE_INLINE VecND<real,sdim> sampleUnitSphereUniform( VecND<real,sdim> randVecU
 };
 
 /**************************************\
-!
 ! Random unit vector that points to a 
 ! point on the surface of a concentric
 ! iunit disk
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real>
 FORCE_INLINE VecND<real,2> sampleConcentricUnitDisk(VecND<real,3> randVecUnit)
@@ -74,14 +70,12 @@ FORCE_INLINE VecND<real,2> sampleConcentricUnitDisk(VecND<real,3> randVecUnit)
 };
 
 /**************************************\
-!
 ! Random unit vector that points to a 
 ! point on the surface of a unit hemi
 ! sphere
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE VecND<real,sdim>  sampleUnitHemisphereCosine(VecND<real,sdim> randVecUnit)
@@ -105,14 +99,12 @@ FORCE_INLINE VecND<real,sdim>  sampleUnitHemisphereCosine(VecND<real,sdim> randV
 };
 
 /**************************************\
-!
 ! Random unit vector that points from 
 ! the centre to a point inside
 ! of a sphere
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE VecND<real,sdim> sampleUnitBallUniform(VecND<real,sdim> randVecUnit)
@@ -124,14 +116,12 @@ FORCE_INLINE VecND<real,sdim> sampleUnitBallUniform(VecND<real,sdim> randVecUnit
 };
 
 /**************************************\
-!
 ! Sample uniformly from a line segment
 ! specialised for 1-D objects embedded
 ! in 2-D space
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE void sampleLineSegmentUniformly(const VecND<real,sdim> & pa
@@ -152,14 +142,12 @@ FORCE_INLINE void sampleLineSegmentUniformly(const VecND<real,sdim> & pa
 }
 
 /**************************************\
-!
 ! Sample uniformly from a triangular
 ! facet specialised for 2-D objects
 ! embedded in 3-D space
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE void sampleTriangleUniformly(const VecND<real,sdim> & pa
@@ -189,13 +177,11 @@ FORCE_INLINE void sampleTriangleUniformly(const VecND<real,sdim> & pa
 }
 
 /**************************************\
-!
 ! The probability density function for
 ! a sample on the uniform sphere
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE real pdfSampleSphereUniform(real r)
@@ -207,13 +193,11 @@ FORCE_INLINE real pdfSampleSphereUniform(real r)
 };
 
 /**************************************\
-!
 ! The probability density function for
 ! a sample on the uniform ball
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE real pdfSampleUnitHemisphereCosine(real cosTheta)
@@ -225,13 +209,11 @@ FORCE_INLINE real pdfSampleUnitHemisphereCosine(real cosTheta)
 };
 
 /**************************************\
-!
 ! The probability density function for
 ! a sample in the uniform unit ball
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE real pdfSampleBallUniform(real r)
@@ -243,13 +225,11 @@ FORCE_INLINE real pdfSampleBallUniform(real r)
 };
 
 /**************************************\
-!
 ! Perform a coordinate transform on
 ! a given vector
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, size_t sdim>
 FORCE_INLINE void transformCoordinates(const VecND<real,sdim> & n, VecND<real,sdim> & d)
@@ -278,13 +258,11 @@ FORCE_INLINE void transformCoordinates(const VecND<real,sdim> & n, VecND<real,sd
 };
 
 /**************************************\
-!
 ! Stratified sample function
 ! using a LatinHyperCube
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename real, typename RNGData, size_t sdim>
 FORCE_INLINE void generateStratifiedSamples(std::vector<float>& samples
@@ -319,15 +297,76 @@ FORCE_INLINE void generateStratifiedSamples(std::vector<float>& samples
 }
 
 /**************************************\
-!
 ! Clamp function
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025
-!
 \**************************************/
 template<typename T, typename U, typename V>
 FORCE_INLINE T clamp(T val, U low, V high)
 {
   return (val < low) ?  low :  ((val > high) ? high : val);
+};
+
+
+/**************************************\
+! Cumalative distribution function
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+\**************************************/
+template<typename real, size_t sdim>
+class CDFTable{
+  private:
+    std::vector<real> table;
+
+  public:
+    // builds a CDF table from the input list of non-negative weights
+    FORCE_INLINE real build(const std::vector<real>& weights);
+
+    // generate sample from table using one uniform sample in the range [0, 1)
+    FORCE_INLINE size_t sample(const real & u) const;
+};
+
+// builds a CDF table from the input list of non-negative weights
+template<typename real, size_t sdim>
+FORCE_INLINE real CDFTable<real, sdim>::build(const std::vector<real> & weights)
+{
+  // initialize table
+  size_t nWeights = weights.size();
+  real zero=real(0.00);
+  real total=zero;
+  if(nWeights > 0){
+    table.resize(nWeights+1);
+    table[0] = zero;
+    for (size_t i=1; i < nWeights+1; i++) table[i] = table[i-1] + weights[i-1];
+    total = table[nWeights];
+    if(total == zero){
+      for (size_t i=1; i < nWeights+1; i++) table[i] = real(i)/real(nWeights);
+    }else{
+      for (size_t i=1; i < nWeights+1; i++) table[i] /= total;
+    }
+  }
+  return total;
+}
+
+// generate sample from table using one uniform sample in the range [0, 1)
+template<typename real, size_t sdim>
+FORCE_INLINE size_t CDFTable<real, sdim>::sample(const real & u) const{
+  size_t size = table.size();
+  int first=0, len=size;
+
+  while(len > 0){
+    int half = len >> 1;
+    int middle = first + half;
+
+    // bisect range based on table value at the middle index
+    if(table[middle] <= u){
+      first = middle + 1;
+      len -= half + 1;
+    }else{
+      len = half;
+    }
+  }
+  return clamp(first - 1, 0, size - 2);
 };
