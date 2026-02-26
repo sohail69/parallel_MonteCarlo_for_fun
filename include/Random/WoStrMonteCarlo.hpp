@@ -3,12 +3,12 @@
 #include <cstdio>
 #include <vector>
 #include <functional>
-#include "globalMacros.hpp"
-#include "blockHyperMesh.hpp"
-#include "Random/RNG.hpp"
-#include "Random/RandomSampling.hpp"
-#include "boundary/localVectorAlgebra.hpp"
-#include "boundary/boundaryQueries.hpp"
+#include "../globalMacros.hpp"
+#include "../blockHyperMesh.hpp"
+#include "../boundary/localVectorAlgebra.hpp"
+#include "../boundary/boundaryQueries.hpp"
+#include "RNG.hpp"
+#include "RandomSampling.hpp"
 
 
 /**************************************\

@@ -33,7 +33,7 @@
 
 //WoSt(r) Monte-Carlo and RNG libs
 #include "include/Random/RNG.hpp"
-#include "include/WoStrMonteCarlo.hpp"
+#include "include/Random/WoStrMonteCarlo.hpp"
 
 
 /*****************************************\

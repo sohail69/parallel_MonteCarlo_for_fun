@@ -1,7 +1,6 @@
 #pragma once
 #include <functional>
 #include "../globalMacros.hpp"
-#include "RNG.hpp"
 
 /**************************************\
 ! Random unit vector that points from 
@@ -78,7 +77,7 @@ FORCE_INLINE VecND<real,2> sampleConcentricUnitDisk(VecND<real,3> randVecUnit)
 ! Date  : 31/01/2025
 \**************************************/
 template<typename real, size_t sdim>
-FORCE_INLINE VecND<real,sdim>  sampleUnitHemisphereCosine(VecND<real,sdim> randVecUnit)
+FORCE_INLINE VecND<real,sdim> sampleUnitHemisphereCosine(VecND<real,sdim> randVecUnit)
 {
   //Zero out the vector
   VecND<real,sdim> uniformHemiSphereUnitRandVec;
@@ -258,6 +257,18 @@ FORCE_INLINE void transformCoordinates(const VecND<real,sdim> & n, VecND<real,sd
 };
 
 /**************************************\
+! Clamp function
+!
+! Author: Sohail Rathore
+! Date  : 31/01/2025
+\**************************************/
+template<typename T, typename U, typename V>
+FORCE_INLINE T clamp(T val, U low, V high)
+{
+  return (val < low) ?  low :  ((val > high) ? high : val);
+};
+
+/**************************************\
 ! Stratified sample function
 ! using a LatinHyperCube
 !
@@ -297,20 +308,8 @@ FORCE_INLINE void generateStratifiedSamples(std::vector<float>& samples
 }
 
 /**************************************\
-! Clamp function
-!
-! Author: Sohail Rathore
-! Date  : 31/01/2025
-\**************************************/
-template<typename T, typename U, typename V>
-FORCE_INLINE T clamp(T val, U low, V high)
-{
-  return (val < low) ?  low :  ((val > high) ? high : val);
-};
-
-
-/**************************************\
 ! Cumalative distribution function
+! class
 !
 ! Author: Sohail Rathore
 ! Date  : 31/01/2025

@@ -3,14 +3,13 @@
 #include <functional>
 #include "../globalMacros.hpp"
 
-
 /**************************************\
 !
 ! General interface for RNG's
 ! used in the model
 !
 ! Author: Sohail Rathore
-! Date  : 31/01/2025
+! Date  : 21/02/2025
 !
 \**************************************/
 
@@ -31,7 +30,7 @@ FORCE_INLINE real RNG_reNormalise(const RNGData & seedData
 ! std::random)
 !
 ! Author: Sohail Rathore
-! Date  : 31/01/2025
+! Date  : 21/02/2025
 !
 \**************************************/
 //Data for Original RNG
@@ -55,7 +54,7 @@ FORCE_INLINE void OG_randomUpdate(OG_randomData & rqd_seed){
 ! unsigned int 32-bit generator
 !
 ! Author: Sohail Rathore
-! Date  : 31/01/2025
+! Date  : 21/02/2025
 !
 \**************************************/
 struct LCG32_rngData
@@ -74,7 +73,7 @@ FORCE_INLINE void LCG32_rngUpdate(LCG32_rngData & rqd_seed){
 ! using  xor-shift256++
 !
 ! Author: Sohail Rathore
-! Date  : 31/01/2025
+! Date  : 21/02/2025
 !
 \**************************************/
 struct XORSHIFT256_rngData
